@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <math.h>
-#include "HPADDAboard.h"
+#include "HPADDAlibrary.h"
 
 int  main()
 {
@@ -15,11 +15,20 @@ int  main()
 
     if(c == '1')
     {
-        uint8_t id;
-
         initHPADDAboard();
-        checkADS1256ID();
-
+        uint8_t id;
+        id = ADS1256_ReadChipID();
+        printf("ID=\r\n");  
+        if (id != 3)
+        {
+            printf("Error, ADS1256 Chip ID = 0x%d\r\n", (int)id);
+        }
+        else
+        {
+            printf("Ok, ADS1256 Chip ID = 0x%d\r\n", (int)id);
+        }
+        ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_15SPS);
+        ADS1256_StartScan(0);
         while(1)
         {
             printAllADval();

@@ -1,2 +1,2 @@
-ADtest: HPADDAboard.c main.c HPADDAboard.h 
-	gcc -o Test HPADDAboard.c HPADDAboard.h main.c -lbcm2835 -lm
+ADtest: HPADDAlibrary.c main.c HPADDAlibrary.h 
+	gcc -o Test HPADDAlibrary.c HPADDAlibrary.h main.c -lbcm2835 -lm
