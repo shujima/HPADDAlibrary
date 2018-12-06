@@ -1,9 +1,14 @@
+/*
+ * HPADDAlibrary.c
+ * This program is based on an official "ads1256_test.c".
+ * This program is released under the MIT license.
+ * Shujima 2018
+ */
 # include <stdint.h> //uint8_t, ...
 
 typedef enum {FALSE = 0, TRUE = !FALSE} bool;
 
-
-/* gain channel� */
+/* gain channel*/
 typedef enum
 {
 	ADS1256_GAIN_1			= (0),	/* GAIN   1 */
@@ -69,7 +74,7 @@ typedef struct
 
 
 
-/*Register definition�� Table 23. Register Map --- ADS1256 datasheet Page 30*/
+/*Register definition Table 23. Register Map --- ADS1256 datasheet Page 30*/
 enum
 {
 	/*Register address, followed by reset the default values */
@@ -86,7 +91,7 @@ enum
 	REG_FSC2   = 10, // xxH
 };
 
-/* Command definition�� TTable 24. Command Definitions --- ADS1256 datasheet Page 34 */
+/* Command definition TTable 24. Command Definitions --- ADS1256 datasheet Page 34 */
 enum
 {
 	CMD_WAKEUP  = 0x00,	// Completes SYNC and Exits Standby Mode 0000  0000 (00h)
@@ -127,40 +132,44 @@ static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 	0x03
 };
 
-
-
-
-
-
-
+// Common
 void  delay_us(uint64_t micros);
-//void ADS1256_StartScan(uint8_t _ucScanMode);
-static void ADS1256_Send8Bit(uint8_t _data);
+int initHPADDAboard();
+void closeHPADDAboard();
+
+// DA
+void DAC8532_Write( int dac_channel , unsigned int val);
+unsigned int DAC8532_Volt2Value( double volt , double volt_ref);
+
+void DAC8532_SetCS(char b); //(Private)
+
+// Get AD
+int32_t ADS1256_GetAdc(uint8_t _ch);
+int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
+
+// Print AD
+void ADS1256_PrintAllValue();
+void ADS1256_PrintAllValueDiff();
+void ADS1256_PrintAllReg();
+double ADS1256_Value2Volt(uint32_t value , double vref);
+
+// Connection to AD
+static int32_t ADS1256_ReadData(void);
+
+
+// AD settings
 void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
-static void ADS1256_DelayDATA(void);
-static uint8_t ADS1256_Recive8Bit(void);
+uint8_t ADS1256_ReadChipID(void);
 static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue);
 static uint8_t ADS1256_ReadReg(uint8_t _RegID);
 static void ADS1256_WriteCmd(uint8_t _cmd);
-uint8_t ADS1256_ReadChipID(void);
-static void ADS1256_SetChannal(uint8_t _ch);
-static void ADS1256_SetDiffChannal(uint8_t _ch);
+
+// AD others (Private)
+static void ADS1256_DelayDATA(void);
 void ADS1256_WaitDRDY(void);
-static int32_t ADS1256_ReadData(void);
-
-int32_t ADS1256_GetAdc(uint8_t _ch);
-int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
 void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
-void ADS1256_ISR(void);
-uint8_t ADS1256_Scan(void);
-
-double ADS1256_Value2Volt(uint32_t value , double vref);
-void ADS1256_PrintAllReg();
-
-int initHPADDAboard();
-void DAC8532_Write( int dac_channel , unsigned int val);
-unsigned int DAC8532_Volt2Value( double volt , double volt_ref);
-void ADS1256_PrintAllValue();
-void closeHPADDAboard();
 void ADS1256_SetCS(char b);
-void DAC8532_SetCS(char b);
+
+// AD bottom layer of connection (Private)
+static void ADS1256_Send8Bit(uint8_t _data);
+static uint8_t ADS1256_Recive8Bit(void);
