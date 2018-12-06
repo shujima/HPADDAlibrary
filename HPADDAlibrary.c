@@ -173,8 +173,7 @@ static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 
 
 
-//void  bsp_DelayUS(uint64_t micros);
-//void ADS1256_StartScan(uint8_t _ucScanMode);
+void  delay_us(uint64_t micros);
 static void ADS1256_Send8Bit(uint8_t _data);
 void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
 static void ADS1256_DelayDATA(void);
@@ -183,80 +182,27 @@ static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue);
 static uint8_t ADS1256_ReadReg(uint8_t _RegID);
 static void ADS1256_WriteCmd(uint8_t _cmd);
 uint8_t ADS1256_ReadChipID(void);
-//static void ADS1256_SetChannal(uint8_t _ch);
-//static void ADS1256_SetDiffChannal(uint8_t _ch);
-static void ADS1256_WaitDRDY(void);
+void ADS1256_WaitDRDY(void);
 static int32_t ADS1256_ReadData(void);
-
 int32_t ADS1256_GetAdc(uint8_t _ch);
 int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
 void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
-
 double ADS1256_Value2Volt(uint32_t value , double vref);
 void ADS1256_PrintAllReg();
-
-//void ADS1256_ISR(void);
 uint8_t ADS1256_Scan(void);
-
 int initHPADDAboard();
-void writeDAC8532( int dac_channel , unsigned int val);
-unsigned int volt2DAC8532val( double volt , double volt_ref);
-void printAllADval();
+void DAC8532_Write( int dac_channel , unsigned int val);
+unsigned int DAC8532_Volt2Value( double volt , double volt_ref);
+void ADS1256_PrintAllValue();
 void closeHPADDAboard();
-void setCS_ADS1256(char b);
-void setCS_DAC8532(char b);
+void ADS1256_SetCS(char b);
+void DAC8532_SetCS(char b);
 
 
-void  bsp_DelayUS(uint64_t micros)
+void  delay_us(uint64_t micros)
 {
 		bcm2835_delayMicroseconds (micros);
 }
-
-
-/*
-*********************************************************************************************************
-*	name: bsp_InitADS1256
-*	function: Configuration of the STM32 GPIO and SPI interface��The connection ADS1256
-*	parameter: NULL
-*	The return value: NULL
-*********************************************************************************************************
-*/
-// void bsp_InitADS1256(void)
-// {
-// #ifdef SOFT_SPI
-// 	setCS_DAC8532(HIGH);
-// 	setCS_ADS1256(HIGH);
-// 	SCK_0();
-// 	DI_0();
-// #endif
-
-// //ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_1000SPS);
-// }
-
-/*
-*********************************************************************************************************
-*	name: ADS1256_StartScan
-*	function: Configuration DRDY PIN for external interrupt is triggered
-*	parameter: _ucDiffMode : 0  Single-ended input  8 channel�� 1 Differential input  4 channe
-*	The return value: NULL
-*********************************************************************************************************
-*/
-// void ADS1256_StartScan(uint8_t _ucScanMode)
-// {
-// 	g_tADS1256.ScanMode = _ucScanMode;
-
-// 	{
-// 		uint8_t i;
-
-// 		g_tADS1256.Channel = 0;
-
-// 		for (i = 0; i < 8; i++)
-// 		{
-// 			g_tADS1256.AdcNow[i] = 0;
-// 		}
-// 	}
-//ADS1256_StartScan
-// }
 
 /*
 *********************************************************************************************************
@@ -269,7 +215,7 @@ void  bsp_DelayUS(uint64_t micros)
 static void ADS1256_Send8Bit(uint8_t _data)
 {
 
-	bsp_DelayUS(2);
+	delay_us(2);
 	bcm2835_spi_transfer(_data);
 }
 
@@ -355,8 +301,8 @@ void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate)
 		//ADS1256_WriteReg(REG_ADCON, (0 << 5) | (0 << 2) | (GAIN_1 << 1));	/*choose 1: gain 1 ;input 5V/
 		buf[3] = s_tabDataRate[_drate];	// DRATE_10SPS;	
 
-		setCS_DAC8532(HIGH);
-		setCS_ADS1256(LOW);	/* SPIƬѡ = 0 */
+		DAC8532_SetCS(HIGH);
+		ADS1256_SetCS(LOW);	/* SPIƬѡ = 0 */
 		ADS1256_Send8Bit(CMD_WREG | 0);	/* Write command register, send the register address */
 		ADS1256_Send8Bit(0x03);			/* Register number 4,Initialize the number  -1*/
 
@@ -365,10 +311,10 @@ void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate)
 		ADS1256_Send8Bit(buf[2]);	/* Set the ADCON control register,gain */
 		ADS1256_Send8Bit(buf[3]);	/* Set the output rate */
 
-		setCS_ADS1256(HIGH);	/* SPI  cs = 1 */
+		ADS1256_SetCS(HIGH);	/* SPI  cs = 1 */
 	}
 
-	bsp_DelayUS(50);
+	delay_us(50);
 }
 
 
@@ -386,7 +332,7 @@ static void ADS1256_DelayDATA(void)
 		Delay from last SCLK edge for DIN to first SCLK rising edge for DOUT: RDATA, RDATAC,RREG Commands
 		min  50   CLK = 50 * 0.13uS = 6.5uS
 	*/
-	bsp_DelayUS(10);	/* The minimum time delay 6.5us */
+	delay_us(10);	/* The minimum time delay 6.5us */
 }
 
 
@@ -418,13 +364,13 @@ static uint8_t ADS1256_Recive8Bit(void)
 */
 static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue)
 {
-	setCS_DAC8532(HIGH);
-	setCS_ADS1256(LOW);	/* SPI  cs  = 0 */
+	DAC8532_SetCS(HIGH);
+	ADS1256_SetCS(LOW);	/* SPI  cs  = 0 */
 	ADS1256_Send8Bit(CMD_WREG | _RegID);	/*Write command register */
 	ADS1256_Send8Bit(0x00);		/*Write the register number */
 
 	ADS1256_Send8Bit(_RegValue);	/*send register value */
-	setCS_ADS1256(HIGH);	/* SPI   cs = 1 */
+	ADS1256_SetCS(HIGH);	/* SPI   cs = 1 */
 }
 
 /*
@@ -439,15 +385,15 @@ static uint8_t ADS1256_ReadReg(uint8_t _RegID)
 {
 	uint8_t read;
 
-	setCS_DAC8532(HIGH);
-	setCS_ADS1256(LOW);	/* SPI  cs  = 0 */
+	DAC8532_SetCS(HIGH);
+	ADS1256_SetCS(LOW);	/* SPI  cs  = 0 */
 	ADS1256_Send8Bit(CMD_RREG | _RegID);	/* Write command register */
 	ADS1256_Send8Bit(0x00);	/* Write the register number */
 
 	ADS1256_DelayDATA();	/*delay time */
 
 	read = ADS1256_Recive8Bit();	/* Read the register values */
-	setCS_ADS1256(HIGH);	/* SPI   cs  = 1 */
+	ADS1256_SetCS(HIGH);	/* SPI   cs  = 1 */
 
 	return read;
 }
@@ -462,10 +408,10 @@ static uint8_t ADS1256_ReadReg(uint8_t _RegID)
 */
 static void ADS1256_WriteCmd(uint8_t _cmd)
 {
-	setCS_DAC8532(HIGH);
-	setCS_ADS1256(LOW);	/* SPI   cs = 0 */
+	DAC8532_SetCS(HIGH);
+	ADS1256_SetCS(LOW);	/* SPI   cs = 0 */
 	ADS1256_Send8Bit(_cmd);
-	setCS_ADS1256(HIGH);	/* SPI  cs  = 1 */
+	ADS1256_SetCS(HIGH);	/* SPI  cs  = 1 */
 }
 
 /*
@@ -485,100 +431,7 @@ uint8_t ADS1256_ReadChipID(void)
 	return (id >> 4);
 }
 
-/*
-*********************************************************************************************************
-*	name: ADS1256_SetChannal
-*	function: Configuration channel number
-*	parameter:  _ch:  channel number  0--7
-*	The return value: NULL
-*********************************************************************************************************
-*/
-// static void ADS1256_SetChannal(uint8_t _ch)
-// {
-// 	/*
-// 	Bits 7-4 PSEL3, PSEL2, PSEL1, PSEL0: Positive Input Channel (AINP) Select
-// 		0000 = AIN0 (default)
-// 		0001 = AIN1
-// 		0010 = AIN2 (ADS1256 only)
-// 		0011 = AIN3 (ADS1256 only)
-// 		0100 = AIN4 (ADS1256 only)
-// 		0101 = AIN5 (ADS1256 only)
-// 		0110 = AIN6 (ADS1256 only)
-// 		0111 = AIN7 (ADS1256 only)
-// 		1xxx = AINCOM (when PSEL3 = 1, PSEL2, PSEL1, PSEL0 are ��don��t care��)
 
-// 		NOTE: When using an ADS1255 make sure to only select the available inputs.
-
-// 	Bits 3-0 NSEL3, NSEL2, NSEL1, NSEL0: Negative Input Channel (AINN)Select
-// 		0000 = AIN0
-// 		0001 = AIN1 (default)
-// 		0010 = AIN2 (ADS1256 only)
-// 		0011 = AIN3 (ADS1256 only)
-// 		0100 = AIN4 (ADS1256 only)
-// 		0101 = AIN5 (ADS1256 only)
-// 		0110 = AIN6 (ADS1256 only)
-// 		0111 = AIN7 (ADS1256 only)
-// 		1xxx = AINCOM (when NSEL3 = 1, NSEL2, NSEL1, NSEL0 are ��don��t care��)
-// 	*/
-// 	if (_ch > 7)
-// 	{
-// 		return;
-// 	}
-// 	ADS1256_WriteReg(REG_MUX, (_ch << 4) | (1 << 3));	/* Bit3 = 1, AINN connection AINCOM */
-// }
-
-/*
-*********************************************************************************************************
-*	name: ADS1256_SetDiffChannal
-*	function: The configuration difference channel
-*	parameter:  _ch:  channel number  0--3
-*	The return value:  four high status register
-*********************************************************************************************************
-*/
-// static void ADS1256_SetDiffChannal(uint8_t _ch)
-// {
-// 	/*
-// 	Bits 7-4 PSEL3, PSEL2, PSEL1, PSEL0: Positive Input Channel (AINP) Select
-// 		0000 = AIN0 (default)
-// 		0001 = AIN1
-// 		0010 = AIN2 (ADS1256 only)
-// 		0011 = AIN3 (ADS1256 only)
-// 		0100 = AIN4 (ADS1256 only)
-// 		0101 = AIN5 (ADS1256 only)
-// 		0110 = AIN6 (ADS1256 only)
-// 		0111 = AIN7 (ADS1256 only)
-// 		1xxx = AINCOM (when PSEL3 = 1, PSEL2, PSEL1, PSEL0 are ��don��t care��)
-
-// 		NOTE: When using an ADS1255 make sure to only select the available inputs.
-
-// 	Bits 3-0 NSEL3, NSEL2, NSEL1, NSEL0: Negative Input Channel (AINN)Select
-// 		0000 = AIN0
-// 		0001 = AIN1 (default)
-// 		0010 = AIN2 (ADS1256 only)
-// 		0011 = AIN3 (ADS1256 only)
-// 		0100 = AIN4 (ADS1256 only)
-// 		0101 = AIN5 (ADS1256 only)
-// 		0110 = AIN6 (ADS1256 only)
-// 		0111 = AIN7 (ADS1256 only)
-// 		1xxx = AINCOM (when NSEL3 = 1, NSEL2, NSEL1, NSEL0 are ��don��t care��)
-// 	*/
-// 	if (_ch == 0)
-// 	{
-// 		ADS1256_WriteReg(REG_MUX, (0 << 4) | 1);	/* DiffChannal  AIN0�� AIN1 */
-// 	}
-// 	else if (_ch == 1)
-// 	{
-// 		ADS1256_WriteReg(REG_MUX, (2 << 4) | 3);	/*DiffChannal   AIN2�� AIN3 */
-// 	}
-// 	else if (_ch == 2)
-// 	{
-// 		ADS1256_WriteReg(REG_MUX, (4 << 4) | 5);	/*DiffChannal    AIN4�� AIN5 */
-// 	}
-// 	else if (_ch == 3)
-// 	{
-// 		ADS1256_WriteReg(REG_MUX, (6 << 4) | 7);	/*DiffChannal   AIN6�� AIN7 */
-// 	}
-// }
 
 /*
 *********************************************************************************************************
@@ -588,30 +441,20 @@ uint8_t ADS1256_ReadChipID(void)
 *	The return value:  NULL
 *********************************************************************************************************
 */
-static void ADS1256_WaitDRDY(void)
+void ADS1256_WaitDRDY(void)
 {
 	uint32_t i;
 
-	//試しに無限にしてみる
-	while(1)
+	for (i = 0; i < 1000000; i++)
 	{
 		if (bcm2835_gpio_lev(AD_DRDY)==0)
 		{
-			break;
+			return;
 		}
+		delay_us(1);
 	}
 
-	// for (i = 0; i < 400000; i++)
-	// {
-	// 	if (bcm2835_gpio_lev(AD_DRDY)==0)
-	// 	{
-	// 		break;
-	// 	}
-	// }
-	// if (i >= 400000)
-	// {
-	// 	printf("ADS1256_WaitDRDY() Time Out ...\r\n");		
-	// }
+	perror("ADS1256_WaitDRDY() Time Out ...\r\n");	
 }
 
 /*
@@ -626,8 +469,8 @@ static int32_t ADS1256_ReadData(void)
 {
 	uint32_t read = 0;
     static uint8_t buf[3];
-	setCS_DAC8532(HIGH);
-	setCS_ADS1256(LOW);	/* SPI   cs = 0 */
+	DAC8532_SetCS(HIGH);
+	ADS1256_SetCS(LOW);	/* SPI   cs = 0 */
 
 	ADS1256_Send8Bit(CMD_RDATA);	/* read ADC command  */
 
@@ -642,7 +485,7 @@ static int32_t ADS1256_ReadData(void)
     read |= ((uint32_t)buf[1] << 8);  /* Pay attention to It is wrong   read |= (buf[1] << 8) */
     read |= buf[2];
 
-	setCS_ADS1256(HIGH);	/* SPIƬѡ = 1 */
+	ADS1256_SetCS(HIGH);	/* SPIƬѡ = 1 */
 
 	/* Extend a signed number*/
     if (read & 0x800000)
@@ -728,13 +571,13 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 
 	ADS1256_WriteReg(REG_MUX,(positive_common << 7) | ((positive_no & 7) << 4) | (negative_common << 3) | ((negative_no & 7)) );
 	//ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
-	bsp_DelayUS(5);
+	delay_us(5);
 
 	ADS1256_WriteCmd(CMD_SYNC);
-	bsp_DelayUS(5);
+	delay_us(5);
 
 	ADS1256_WriteCmd(CMD_WAKEUP);
-	bsp_DelayUS(25);
+	delay_us(25);
 }
 
 
@@ -758,13 +601,13 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 // 	{
 
 // 		ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_SYNC);
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_WAKEUP);
-// 		bsp_DelayUS(25);
+// 		delay_us(25);
 
 // 		if (g_tADS1256.Channel == 0)
 // 		{
@@ -784,10 +627,10 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 // 	{
 		
 // 		ADS1256_SetDiffChannal(g_tADS1256.Channel);	/* change DiffChannal */
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_SYNC);
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_WAKEUP);
 // 		bsp_Delayd ADS1256_ISR(void)
@@ -796,13 +639,13 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 // 	{
 
 // 		ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_SYNC);
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_WAKEUP);
-// 		bsp_DelayUS(25);
+// 		delay_us(25);
 
 // 		if (g_tADS1256.Channel == 0)
 // 		{
@@ -822,13 +665,13 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 // 	{
 		
 // 		ADS1256_SetDiffChannal(g_tADS1256.Channel);	/* change DiffChannal */
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_SYNC);
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_WAKEUP);
-// 		bsp_DelayUS(25);
+// 		delay_us(25);
 
 // 		if (g_tADS1256.Channel == 0)
 // 		{
@@ -863,10 +706,10 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 // }yUS(5);
 
 // 		ADS1256_WriteCmd(CMD_SYNC);
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_WAKEUP);
-// 		bsp_DelayUS(25);
+// 		delay_us(25);
 
 // 		if (g_tADS1256.Channel == 0)
 // 		{
@@ -886,13 +729,13 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 // 	{
 		
 // 		ADS1256_SetDiffChannal(g_tADS1256.Channel);	/* change DiffChannal */
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_SYNC);
-// 		bsp_DelayUS(5);
+// 		delay_us(5);
 
 // 		ADS1256_WriteCmd(CMD_WAKEUP);
-// 		bsp_DelayUS(25);
+// 		delay_us(25);
 
 // 		if (g_tADS1256.Channel == 0)
 // 		{
@@ -931,13 +774,13 @@ void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
 
 /*
 *********************************************************************************************************
-*	name: printAllADval
+*	name: ADS1256_PrintAllValue
 *	function:  print 8 values of ADS1256 input
 *	parameter: NULL
 *	The return value:  NULL
 *********************************************************************************************************
 */
-void printAllADval()
+void ADS1256_PrintAllValue()
 {
 	uint8_t i;
 	int32_t adval;
@@ -970,13 +813,13 @@ void ADS1256_PrintAllReg()
 
 /*
 *********************************************************************************************************
-*	name: setCS_ADS1256
+*	name: ADS1256_SetCS
 *	function:  set SPI CS pin value of ADS1256 
 *	parameter: b : bool value for SPI CS status (0 : connection start , 1: connection end)
 *	The return value:  NULL
 *********************************************************************************************************
 */
-void setCS_ADS1256(char b)
+void ADS1256_SetCS(char b)
 {
 	if(b)
 	{
@@ -1009,14 +852,14 @@ double ADS1256_Value2Volt(uint32_t value , double vref)
 
 /*
 *********************************************************************************************************
-*	name: writeDAC8532
+*	name: DAC8532_Write
 *	function:  change an output of DAC8532 to target value 
 *	parameter:  dac_channel : channel of DAC8532 (0 or 1)
-				val : output value to DAC8532 ( 0 - 65536 ) , please use volt2DAC8532val function
+				val : output value to DAC8532 ( 0 - 65536 ) , please use DAC8532_Volt2Value function
 *	The return value:  NULL
 *********************************************************************************************************
 */
-void writeDAC8532( int dac_channel , unsigned int val)
+void DAC8532_Write( int dac_channel , unsigned int val)
 {
     bcm2835_gpio_write(DA_SPI_CS , 0);
     if(dac_channel == 0)
@@ -1036,27 +879,27 @@ void writeDAC8532( int dac_channel , unsigned int val)
 
 /*
 *********************************************************************************************************
-*	name: volt2DAC8532val
+*	name: DAC8532_Volt2Value
 *	function:  convert value from volt to 16bit value ( 0 - 65535 )
 *	parameter:  volt : target volt [v] ( 0 - 5.0 )
 				volt_ref : reference volt [v] ( 3.3 or 5.0 )
 *	The return value:  output value to DAC8532 ( 0 - 65535 )
 *********************************************************************************************************
 */
-unsigned int volt2DAC8532val( double volt , double volt_ref)
+unsigned int DAC8532_Volt2Value( double volt , double volt_ref)
 {
     return ( unsigned int ) ( 65536 * volt / volt_ref );
 }
 
 /*
 *********************************************************************************************************
-*	name: setCS_DAC8532
+*	name: DAC8532_SetCS
 *	function:  set SPI CS pin value of DAC8532 
 *	parameter: b : bool value for SPI CS status (0 : connection start , 1: connection end)
 *	The return value:  NULL
 *********************************************************************************************************
 */
-void setCS_DAC8532(char b)
+void DAC8532_SetCS(char b)
 {
 	if(b)
 	{

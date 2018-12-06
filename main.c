@@ -32,9 +32,11 @@ int  main()
         // ADS1256_StartScan(0);
         while(1)
         {
-            printAllADval();
+            //printAllADval();
+            ADS1256_PrintAllValue();
             //ADS1256_PrintAllReg();
-            bsp_DelayUS(100000);
+            //bsp_DelayUS(100000);
+            delay_us(100000);
             printf("\033[%dA",8);
         }
 
@@ -48,11 +50,12 @@ int  main()
 
         while(1)
         {
-            writeDAC8532( 0 , volt2DAC8532val( fabs( 5.0 * sin( i / 10.0 ) ) , 5.0 ) );
-            writeDAC8532( 1 , volt2DAC8532val( fabs( 5.0 * cos( i / 10.0 ) ) , 5.0 ) );
+            DAC8532_Write( 0 , DAC8532_Volt2Value( fabs( 5.0 * sin( i / 10.0 ) ) , 5.0 ) );
+            DAC8532_Write( 1 , DAC8532_Volt2Value( fabs( 5.0 * cos( i / 10.0 ) ) , 5.0 ) );
             printf("DAC0 = %f [V], DAC1 = %f [V]\n" ,  5.0 * fabs( sin( i / 10.0 ) ) , 5.0 * fabs( cos( i / 10.0 ) ));
             i++;
-            bsp_DelayUS(100000);
+            //bsp_DelayUS(100000);
+            delay_us(100000);
         } 
     }
 

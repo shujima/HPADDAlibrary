@@ -133,7 +133,7 @@ static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 
 
 
-void  bsp_DelayUS(uint64_t micros);
+void  delay_us(uint64_t micros);
 //void ADS1256_StartScan(uint8_t _ucScanMode);
 static void ADS1256_Send8Bit(uint8_t _data);
 void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
@@ -145,7 +145,7 @@ static void ADS1256_WriteCmd(uint8_t _cmd);
 uint8_t ADS1256_ReadChipID(void);
 static void ADS1256_SetChannal(uint8_t _ch);
 static void ADS1256_SetDiffChannal(uint8_t _ch);
-static void ADS1256_WaitDRDY(void);
+void ADS1256_WaitDRDY(void);
 static int32_t ADS1256_ReadData(void);
 
 int32_t ADS1256_GetAdc(uint8_t _ch);
@@ -158,9 +158,9 @@ double ADS1256_Value2Volt(uint32_t value , double vref);
 void ADS1256_PrintAllReg();
 
 int initHPADDAboard();
-void writeDAC8532( int dac_channel , unsigned int val);
-unsigned int volt2DAC8532val( double volt , double volt_ref);
-void printAllADval();
+void DAC8532_Write( int dac_channel , unsigned int val);
+unsigned int DAC8532_Volt2Value( double volt , double volt_ref);
+void ADS1256_PrintAllValue();
 void closeHPADDAboard();
-void setCS_ADS1256(char b);
-void setCS_DAC8532(char b);
+void ADS1256_SetCS(char b);
+void DAC8532_SetCS(char b);
