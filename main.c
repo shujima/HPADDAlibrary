@@ -28,11 +28,14 @@ int  main()
             printf("Ok, ADS1256 Chip ID = 0x%d\r\n", (int)id);
         }
         ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_15SPS);
-        ADS1256_StartScan(0);
+        //ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_100SPS);
+        // ADS1256_StartScan(0);
         while(1)
         {
             printAllADval();
+            //ADS1256_PrintAllReg();
             bsp_DelayUS(100000);
+            printf("\033[%dA",8);
         }
 
         closeHPADDAboard();

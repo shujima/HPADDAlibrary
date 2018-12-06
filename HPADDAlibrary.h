@@ -134,7 +134,7 @@ static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 
 
 void  bsp_DelayUS(uint64_t micros);
-void ADS1256_StartScan(uint8_t _ucScanMode);
+//void ADS1256_StartScan(uint8_t _ucScanMode);
 static void ADS1256_Send8Bit(uint8_t _data);
 void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
 static void ADS1256_DelayDATA(void);
@@ -149,8 +149,13 @@ static void ADS1256_WaitDRDY(void);
 static int32_t ADS1256_ReadData(void);
 
 int32_t ADS1256_GetAdc(uint8_t _ch);
+int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
+void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
 void ADS1256_ISR(void);
 uint8_t ADS1256_Scan(void);
+
+double ADS1256_Value2Volt(uint32_t value , double vref);
+void ADS1256_PrintAllReg();
 
 int initHPADDAboard();
 void writeDAC8532( int dac_channel , unsigned int val);

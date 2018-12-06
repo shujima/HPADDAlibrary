@@ -173,8 +173,8 @@ static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 
 
 
-void  bsp_DelayUS(uint64_t micros);
-void ADS1256_StartScan(uint8_t _ucScanMode);
+//void  bsp_DelayUS(uint64_t micros);
+//void ADS1256_StartScan(uint8_t _ucScanMode);
 static void ADS1256_Send8Bit(uint8_t _data);
 void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
 static void ADS1256_DelayDATA(void);
@@ -183,13 +183,19 @@ static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue);
 static uint8_t ADS1256_ReadReg(uint8_t _RegID);
 static void ADS1256_WriteCmd(uint8_t _cmd);
 uint8_t ADS1256_ReadChipID(void);
-static void ADS1256_SetChannal(uint8_t _ch);
-static void ADS1256_SetDiffChannal(uint8_t _ch);
+//static void ADS1256_SetChannal(uint8_t _ch);
+//static void ADS1256_SetDiffChannal(uint8_t _ch);
 static void ADS1256_WaitDRDY(void);
 static int32_t ADS1256_ReadData(void);
 
 int32_t ADS1256_GetAdc(uint8_t _ch);
-void ADS1256_ISR(void);
+int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
+void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
+
+double ADS1256_Value2Volt(uint32_t value , double vref);
+void ADS1256_PrintAllReg();
+
+//void ADS1256_ISR(void);
 uint8_t ADS1256_Scan(void);
 
 int initHPADDAboard();
@@ -215,22 +221,17 @@ void  bsp_DelayUS(uint64_t micros)
 *	The return value: NULL
 *********************************************************************************************************
 */
+// void bsp_InitADS1256(void)
+// {
+// #ifdef SOFT_SPI
+// 	setCS_DAC8532(HIGH);
+// 	setCS_ADS1256(HIGH);
+// 	SCK_0();
+// 	DI_0();
+// #endif
 
-
-void bsp_InitADS1256(void)
-{
-#ifdef SOFT_SPI
-	setCS_DAC8532(HIGH);
-	setCS_ADS1256(HIGH);
-	SCK_0();
-	DI_0();
-#endif
-
-//ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_1000SPS);
-}
-
-
-
+// //ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_1000SPS);
+// }
 
 /*
 *********************************************************************************************************
@@ -240,22 +241,22 @@ void bsp_InitADS1256(void)
 *	The return value: NULL
 *********************************************************************************************************
 */
-void ADS1256_StartScan(uint8_t _ucScanMode)
-{
-	g_tADS1256.ScanMode = _ucScanMode;
-	/* ��ʼɨ��ǰ, ������������ */
-	{
-		uint8_t i;
+// void ADS1256_StartScan(uint8_t _ucScanMode)
+// {
+// 	g_tADS1256.ScanMode = _ucScanMode;
 
-		g_tADS1256.Channel = 0;
+// 	{
+// 		uint8_t i;
 
-		for (i = 0; i < 8; i++)
-		{
-			g_tADS1256.AdcNow[i] = 0;
-		}
-	}
+// 		g_tADS1256.Channel = 0;
 
-}
+// 		for (i = 0; i < 8; i++)
+// 		{
+// 			g_tADS1256.AdcNow[i] = 0;
+// 		}
+// 	}
+//ADS1256_StartScan
+// }
 
 /*
 *********************************************************************************************************
@@ -492,39 +493,39 @@ uint8_t ADS1256_ReadChipID(void)
 *	The return value: NULL
 *********************************************************************************************************
 */
-static void ADS1256_SetChannal(uint8_t _ch)
-{
-	/*
-	Bits 7-4 PSEL3, PSEL2, PSEL1, PSEL0: Positive Input Channel (AINP) Select
-		0000 = AIN0 (default)
-		0001 = AIN1
-		0010 = AIN2 (ADS1256 only)
-		0011 = AIN3 (ADS1256 only)
-		0100 = AIN4 (ADS1256 only)
-		0101 = AIN5 (ADS1256 only)
-		0110 = AIN6 (ADS1256 only)
-		0111 = AIN7 (ADS1256 only)
-		1xxx = AINCOM (when PSEL3 = 1, PSEL2, PSEL1, PSEL0 are ��don��t care��)
+// static void ADS1256_SetChannal(uint8_t _ch)
+// {
+// 	/*
+// 	Bits 7-4 PSEL3, PSEL2, PSEL1, PSEL0: Positive Input Channel (AINP) Select
+// 		0000 = AIN0 (default)
+// 		0001 = AIN1
+// 		0010 = AIN2 (ADS1256 only)
+// 		0011 = AIN3 (ADS1256 only)
+// 		0100 = AIN4 (ADS1256 only)
+// 		0101 = AIN5 (ADS1256 only)
+// 		0110 = AIN6 (ADS1256 only)
+// 		0111 = AIN7 (ADS1256 only)
+// 		1xxx = AINCOM (when PSEL3 = 1, PSEL2, PSEL1, PSEL0 are ��don��t care��)
 
-		NOTE: When using an ADS1255 make sure to only select the available inputs.
+// 		NOTE: When using an ADS1255 make sure to only select the available inputs.
 
-	Bits 3-0 NSEL3, NSEL2, NSEL1, NSEL0: Negative Input Channel (AINN)Select
-		0000 = AIN0
-		0001 = AIN1 (default)
-		0010 = AIN2 (ADS1256 only)
-		0011 = AIN3 (ADS1256 only)
-		0100 = AIN4 (ADS1256 only)
-		0101 = AIN5 (ADS1256 only)
-		0110 = AIN6 (ADS1256 only)
-		0111 = AIN7 (ADS1256 only)
-		1xxx = AINCOM (when NSEL3 = 1, NSEL2, NSEL1, NSEL0 are ��don��t care��)
-	*/
-	if (_ch > 7)
-	{
-		return;
-	}
-	ADS1256_WriteReg(REG_MUX, (_ch << 4) | (1 << 3));	/* Bit3 = 1, AINN connection AINCOM */
-}
+// 	Bits 3-0 NSEL3, NSEL2, NSEL1, NSEL0: Negative Input Channel (AINN)Select
+// 		0000 = AIN0
+// 		0001 = AIN1 (default)
+// 		0010 = AIN2 (ADS1256 only)
+// 		0011 = AIN3 (ADS1256 only)
+// 		0100 = AIN4 (ADS1256 only)
+// 		0101 = AIN5 (ADS1256 only)
+// 		0110 = AIN6 (ADS1256 only)
+// 		0111 = AIN7 (ADS1256 only)
+// 		1xxx = AINCOM (when NSEL3 = 1, NSEL2, NSEL1, NSEL0 are ��don��t care��)
+// 	*/
+// 	if (_ch > 7)
+// 	{
+// 		return;
+// 	}
+// 	ADS1256_WriteReg(REG_MUX, (_ch << 4) | (1 << 3));	/* Bit3 = 1, AINN connection AINCOM */
+// }
 
 /*
 *********************************************************************************************************
@@ -534,50 +535,50 @@ static void ADS1256_SetChannal(uint8_t _ch)
 *	The return value:  four high status register
 *********************************************************************************************************
 */
-static void ADS1256_SetDiffChannal(uint8_t _ch)
-{
-	/*
-	Bits 7-4 PSEL3, PSEL2, PSEL1, PSEL0: Positive Input Channel (AINP) Select
-		0000 = AIN0 (default)
-		0001 = AIN1
-		0010 = AIN2 (ADS1256 only)
-		0011 = AIN3 (ADS1256 only)
-		0100 = AIN4 (ADS1256 only)
-		0101 = AIN5 (ADS1256 only)
-		0110 = AIN6 (ADS1256 only)
-		0111 = AIN7 (ADS1256 only)
-		1xxx = AINCOM (when PSEL3 = 1, PSEL2, PSEL1, PSEL0 are ��don��t care��)
+// static void ADS1256_SetDiffChannal(uint8_t _ch)
+// {
+// 	/*
+// 	Bits 7-4 PSEL3, PSEL2, PSEL1, PSEL0: Positive Input Channel (AINP) Select
+// 		0000 = AIN0 (default)
+// 		0001 = AIN1
+// 		0010 = AIN2 (ADS1256 only)
+// 		0011 = AIN3 (ADS1256 only)
+// 		0100 = AIN4 (ADS1256 only)
+// 		0101 = AIN5 (ADS1256 only)
+// 		0110 = AIN6 (ADS1256 only)
+// 		0111 = AIN7 (ADS1256 only)
+// 		1xxx = AINCOM (when PSEL3 = 1, PSEL2, PSEL1, PSEL0 are ��don��t care��)
 
-		NOTE: When using an ADS1255 make sure to only select the available inputs.
+// 		NOTE: When using an ADS1255 make sure to only select the available inputs.
 
-	Bits 3-0 NSEL3, NSEL2, NSEL1, NSEL0: Negative Input Channel (AINN)Select
-		0000 = AIN0
-		0001 = AIN1 (default)
-		0010 = AIN2 (ADS1256 only)
-		0011 = AIN3 (ADS1256 only)
-		0100 = AIN4 (ADS1256 only)
-		0101 = AIN5 (ADS1256 only)
-		0110 = AIN6 (ADS1256 only)
-		0111 = AIN7 (ADS1256 only)
-		1xxx = AINCOM (when NSEL3 = 1, NSEL2, NSEL1, NSEL0 are ��don��t care��)
-	*/
-	if (_ch == 0)
-	{
-		ADS1256_WriteReg(REG_MUX, (0 << 4) | 1);	/* DiffChannal  AIN0�� AIN1 */
-	}
-	else if (_ch == 1)
-	{
-		ADS1256_WriteReg(REG_MUX, (2 << 4) | 3);	/*DiffChannal   AIN2�� AIN3 */
-	}
-	else if (_ch == 2)
-	{
-		ADS1256_WriteReg(REG_MUX, (4 << 4) | 5);	/*DiffChannal    AIN4�� AIN5 */
-	}
-	else if (_ch == 3)
-	{
-		ADS1256_WriteReg(REG_MUX, (6 << 4) | 7);	/*DiffChannal   AIN6�� AIN7 */
-	}
-}
+// 	Bits 3-0 NSEL3, NSEL2, NSEL1, NSEL0: Negative Input Channel (AINN)Select
+// 		0000 = AIN0
+// 		0001 = AIN1 (default)
+// 		0010 = AIN2 (ADS1256 only)
+// 		0011 = AIN3 (ADS1256 only)
+// 		0100 = AIN4 (ADS1256 only)
+// 		0101 = AIN5 (ADS1256 only)
+// 		0110 = AIN6 (ADS1256 only)
+// 		0111 = AIN7 (ADS1256 only)
+// 		1xxx = AINCOM (when NSEL3 = 1, NSEL2, NSEL1, NSEL0 are ��don��t care��)
+// 	*/
+// 	if (_ch == 0)
+// 	{
+// 		ADS1256_WriteReg(REG_MUX, (0 << 4) | 1);	/* DiffChannal  AIN0�� AIN1 */
+// 	}
+// 	else if (_ch == 1)
+// 	{
+// 		ADS1256_WriteReg(REG_MUX, (2 << 4) | 3);	/*DiffChannal   AIN2�� AIN3 */
+// 	}
+// 	else if (_ch == 2)
+// 	{
+// 		ADS1256_WriteReg(REG_MUX, (4 << 4) | 5);	/*DiffChannal    AIN4�� AIN5 */
+// 	}
+// 	else if (_ch == 3)
+// 	{
+// 		ADS1256_WriteReg(REG_MUX, (6 << 4) | 7);	/*DiffChannal   AIN6�� AIN7 */
+// 	}
+// }
 
 /*
 *********************************************************************************************************
@@ -591,17 +592,26 @@ static void ADS1256_WaitDRDY(void)
 {
 	uint32_t i;
 
-	for (i = 0; i < 400000; i++)
+	//試しに無限にしてみる
+	while(1)
 	{
 		if (bcm2835_gpio_lev(AD_DRDY)==0)
 		{
 			break;
 		}
 	}
-	if (i >= 400000)
-	{
-		printf("ADS1256_WaitDRDY() Time Out ...\r\n");		
-	}
+
+	// for (i = 0; i < 400000; i++)
+	// {
+	// 	if (bcm2835_gpio_lev(AD_DRDY)==0)
+	// 	{
+	// 		break;
+	// 	}
+	// }
+	// if (i >= 400000)
+	// {
+	// 	printf("ADS1256_WaitDRDY() Time Out ...\r\n");		
+	// }
 }
 
 /*
@@ -652,19 +662,81 @@ static int32_t ADS1256_ReadData(void)
 *	The return value:  ADC vaule (signed number)
 *********************************************************************************************************
 */
-int32_t ADS1256_GetAdc(uint8_t _ch)
+int32_t ADS1256_GetAdc(uint8_t ch)
 {
-	int32_t iTemp;
-
-	if (_ch > 7)
-	{
-		return 0;
-	}
-
-	iTemp = g_tADS1256.AdcNow[_ch];
-
-	return iTemp;
+	ADS1256_ChangeMUX(ch , -1);
+	ADS1256_WaitDRDY();
+	return ADS1256_ReadData();
 }
+
+/*
+*********************************************************************************************************
+*	name: ADS1256_GetAdc
+*	function: read ADC value
+*	parameter:  positive_no : input port no of positive side (0 - 7)
+				negative_no : input port no of negative side (0 - 7)
+*	The return value:  ADC vaule (signed number)
+*********************************************************************************************************
+*/
+int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no )
+{
+	ADS1256_ChangeMUX(positive_no , negative_no);
+	ADS1256_WaitDRDY();
+	return ADS1256_ReadData();
+}
+
+/*
+*********************************************************************************************************
+*	name: ADS1256_ChangeMUX
+*	function:  set ADS1256 MUX for changing input of ADC 
+*	parameter: 	positive_no :input port no of positive side (0 - 7 or -1)
+							 Nomally it should be set to 0 - 7
+							 When set to -1 , AGND becomes positive input
+				negative_no :input port no of negative side (-1 or 0 - 7)
+							 Nomally it should be set to -1
+							 When use Differential Input, it should be set to 0 - 7
+*	The return value:  NULL
+*********************************************************************************************************
+*/
+void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
+{
+	/*
+	|---------------------------------------------------------------|
+	| ADS1256 / Register / MUX (0x01)                               |
+	|---------------------------------------------------------------|
+	| Bit 7 | Bit 6 | Bit 5 | Bit 4 | Bit 3 | Bit 2 | Bit 1 | Bit 0 |
+	|---------------------------------------------------------------|
+	| Bit 7-4 positive side input   | Bit 3-0 negative side input   |
+	| 0000 to 0111 : AIN0 to AIN7   | 0000 to 0111 : AIN0 to AIN7   |
+	| 1xxx : AINCOM (AGND)          | 1xxx : AINCOM (AGND)          |
+	|---------------------------------------------------------------|
+	*/
+
+	uint8_t positive_common = 0;	//Bit 7
+	uint8_t negative_common = 0;	//Bit 3
+	if (positive_no < 0 || positive_no > 7)
+	{
+		positive_common = 1;
+		if ( positive_no != -1 )perror("Illegal Input\n");
+	}
+	if (negative_no < 0 || negative_no > 7)
+	{
+		negative_common = 1;
+		if ( negative_no != -1 )perror("Illegal Input\n");
+	}
+	//printf("pcom= %d\tp= %d,\tncom= %d\tn= %d\n", positive_common, positive_no, negative_common, negative_no );
+
+	ADS1256_WriteReg(REG_MUX,(positive_common << 7) | ((positive_no & 7) << 4) | (negative_common << 3) | ((negative_no & 7)) );
+	//ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
+	bsp_DelayUS(5);
+
+	ADS1256_WriteCmd(CMD_SYNC);
+	bsp_DelayUS(5);
+
+	ADS1256_WriteCmd(CMD_WAKEUP);
+	bsp_DelayUS(25);
+}
+
 
 /*
 *********************************************************************************************************
@@ -674,61 +746,169 @@ int32_t ADS1256_GetAdc(uint8_t _ch)
 *	The return value:  NULL
 *********************************************************************************************************
 */
-void ADS1256_ISR(void)
-{
-	if (g_tADS1256.ScanMode == 0)	/*  0  Single-ended input  8 channel�� 1 Differential input  4 channe */
-	{
+// void ADS1256_ISR(void)
+// {
+// 	if (g_tADS1256.ScanMode == 0)	/*  0  Single-ended input  8 channel�� 1 Differential input  4 channe */
+// 	{
 
-		ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
-		bsp_DelayUS(5);
+// 		ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
+// 		bsp_Delad ADS1256_ISR(void)
+// {
+// 	if (g_tADS1256.ScanMode == 0)	/*  0  Single-ended input  8 channel�� 1 Differential input  4 channe */
+// 	{
 
-		ADS1256_WriteCmd(CMD_SYNC);
-		bsp_DelayUS(5);
+// 		ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
+// 		bsp_DelayUS(5);
 
-		ADS1256_WriteCmd(CMD_WAKEUP);
-		bsp_DelayUS(25);
+// 		ADS1256_WriteCmd(CMD_SYNC);
+// 		bsp_DelayUS(5);
 
-		if (g_tADS1256.Channel == 0)
-		{
-			g_tADS1256.AdcNow[7] = ADS1256_ReadData();	
-		}
-		else
-		{
-			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
-		}
+// 		ADS1256_WriteCmd(CMD_WAKEUP);
+// 		bsp_DelayUS(25);
 
-		if (++g_tADS1256.Channel >= 8)
-		{
-			g_tADS1256.Channel = 0;
-		}
-	}
-	else	/*DiffChannal*/
-	{
+// 		if (g_tADS1256.Channel == 0)
+// 		{
+// 			g_tADS1256.AdcNow[7] = ADS1256_ReadData();	
+// 		}
+// 		else
+// 		{
+// 			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
+// 		}
+
+// 		if (++g_tADS1256.Channel >= 8)
+// 		{
+// 			g_tADS1256.Channel = 0;
+// 		}
+// 	}
+// 	else	/*DiffChannal*/
+// 	{
 		
-		ADS1256_SetDiffChannal(g_tADS1256.Channel);	/* change DiffChannal */
-		bsp_DelayUS(5);
+// 		ADS1256_SetDiffChannal(g_tADS1256.Channel);	/* change DiffChannal */
+// 		bsp_DelayUS(5);
 
-		ADS1256_WriteCmd(CMD_SYNC);
-		bsp_DelayUS(5);
+// 		ADS1256_WriteCmd(CMD_SYNC);
+// 		bsp_DelayUS(5);
 
-		ADS1256_WriteCmd(CMD_WAKEUP);
-		bsp_DelayUS(25);
+// 		ADS1256_WriteCmd(CMD_WAKEUP);
+// 		bsp_Delayd ADS1256_ISR(void)
+// {
+// 	if (g_tADS1256.ScanMode == 0)	/*  0  Single-ended input  8 channel�� 1 Differential input  4 channe */
+// 	{
 
-		if (g_tADS1256.Channel == 0)
-		{
-			g_tADS1256.AdcNow[3] = ADS1256_ReadData();	
-		}
-		else
-		{
-			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
-		}
+// 		ADS1256_SetChannal(g_tADS1256.Channel);	/*Switch channel mode */
+// 		bsp_DelayUS(5);
 
-		if (++g_tADS1256.Channel >= 4)
-		{
-			g_tADS1256.Channel = 0;
-		}
-	}
-}
+// 		ADS1256_WriteCmd(CMD_SYNC);
+// 		bsp_DelayUS(5);
+
+// 		ADS1256_WriteCmd(CMD_WAKEUP);
+// 		bsp_DelayUS(25);
+
+// 		if (g_tADS1256.Channel == 0)
+// 		{
+// 			g_tADS1256.AdcNow[7] = ADS1256_ReadData();	
+// 		}
+// 		else
+// 		{
+// 			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
+// 		}
+
+// 		if (++g_tADS1256.Channel >= 8)
+// 		{
+// 			g_tADS1256.Channel = 0;
+// 		}
+// 	}
+// 	else	/*DiffChannal*/
+// 	{
+		
+// 		ADS1256_SetDiffChannal(g_tADS1256.Channel);	/* change DiffChannal */
+// 		bsp_DelayUS(5);
+
+// 		ADS1256_WriteCmd(CMD_SYNC);
+// 		bsp_DelayUS(5);
+
+// 		ADS1256_WriteCmd(CMD_WAKEUP);
+// 		bsp_DelayUS(25);
+
+// 		if (g_tADS1256.Channel == 0)
+// 		{
+// 			g_tADS1256.AdcNow[3] = ADS1256_ReadData();	
+// 		}
+// 		else
+// 		{
+// 			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
+// 		}
+
+// 		if (++g_tADS1256.Channel >= 4)
+// 		{
+// 			g_tADS1256.Channel = 0;
+// 		}
+// 	}
+// }US(25);
+
+// 		if (g_tADS1256.Channel == 0)
+// 		{
+// 			g_tADS1256.AdcNow[3] = ADS1256_ReadData();	
+// 		}
+// 		else
+// 		{
+// 			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
+// 		}
+
+// 		if (++g_tADS1256.Channel >= 4)
+// 		{
+// 			g_tADS1256.Channel = 0;
+// 		}
+// 	}
+// }yUS(5);
+
+// 		ADS1256_WriteCmd(CMD_SYNC);
+// 		bsp_DelayUS(5);
+
+// 		ADS1256_WriteCmd(CMD_WAKEUP);
+// 		bsp_DelayUS(25);
+
+// 		if (g_tADS1256.Channel == 0)
+// 		{
+// 			g_tADS1256.AdcNow[7] = ADS1256_ReadData();	
+// 		}
+// 		else
+// 		{
+// 			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
+// 		}
+
+// 		if (++g_tADS1256.Channel >= 8)
+// 		{
+// 			g_tADS1256.Channel = 0;
+// 		}
+// 	}
+// 	else	/*DiffChannal*/
+// 	{
+		
+// 		ADS1256_SetDiffChannal(g_tADS1256.Channel);	/* change DiffChannal */
+// 		bsp_DelayUS(5);
+
+// 		ADS1256_WriteCmd(CMD_SYNC);
+// 		bsp_DelayUS(5);
+
+// 		ADS1256_WriteCmd(CMD_WAKEUP);
+// 		bsp_DelayUS(25);
+
+// 		if (g_tADS1256.Channel == 0)
+// 		{
+// 			g_tADS1256.AdcNow[3] = ADS1256_ReadData();	
+// 		}
+// 		else
+// 		{
+// 			g_tADS1256.AdcNow[g_tADS1256.Channel-1] = ADS1256_ReadData();	
+// 		}
+
+// 		if (++g_tADS1256.Channel >= 4)
+// 		{
+// 			g_tADS1256.Channel = 0;
+// 		}
+// 	}
+// }
 
 /*
 *********************************************************************************************************
@@ -738,16 +918,16 @@ void ADS1256_ISR(void)
 *	The return value:  0:successful 1:Abnormal
 *********************************************************************************************************
 */
-uint8_t ADS1256_Scan(void)
-{
-	if (bcm2835_gpio_lev(AD_DRDY)==0)
-	{
-		ADS1256_ISR();
-		return 1;
-	}
+// uint8_t ADS1256_Scan(void)
+// {
+// 	if (bcm2835_gpio_lev(AD_DRDY)==0)
+// 	{
+// 		ADS1256_ISR();
+// 		return 1;
+// 	}
 
-	return 0;
-}
+// 	return 0;
+//}
 
 /*
 *********************************************************************************************************
@@ -759,43 +939,33 @@ uint8_t ADS1256_Scan(void)
 */
 void printAllADval()
 {
-  	int32_t adc[8];
-	int32_t volt[8];
 	uint8_t i;
-	uint8_t ch_num = 8;
-	int32_t iTemp;
-	uint8_t buf[3];
-
-	while((ADS1256_Scan() == 0));
-
-	for (i = 0; i < ch_num; i++)
+	int32_t adval;
+	for (i = 0 ; i < 8 ; i ++)
 	{
-		adc[i] = ADS1256_GetAdc(i);
-				volt[i] = (adc[i] * 100) / 167;	
+		adval = ADS1256_GetAdc(i);
+		printf("%d : %d \t(%f[V])\n",i ,adval, ADS1256_Value2Volt(adval,  5.0 ) );
+		//ADS1256_PrintAllReg();
 	}
-	
-	for (i = 0; i < ch_num; i++)
+}
+
+/*
+*********************************************************************************************************
+*	name: ADS1256_PrintAllReg
+*	function:  print all regulator of ADS1256
+*	parameter: NULL
+*	The return value:  NULL
+*********************************************************************************************************
+*/
+void ADS1256_PrintAllReg()
+{
+	const char regname[11][20] = {"STATUS", "MUX   ", "ADCON ", "DRATE ", "IO    ",
+							"OFC0  ", "OFC1  ", "OFC2  ", "FSC0  ", "FSC1  ", "FSC2  "};
+	uint8_t i;
+	for (i = 0 ; i < 11 ; i ++)
 	{
-		buf[0] = ((uint32_t)adc[i] >> 16) & 0xFF;
-		buf[1] = ((uint32_t)adc[i] >> 8) & 0xFF;
-		buf[2] = ((uint32_t)adc[i] >> 0) & 0xFF;
-		printf("%d=%02X%02X%02X, %8ld", (int)i, (int)buf[0], 
-				(int)buf[1], (int)buf[2], (long)adc[i]);                
-
-		iTemp = volt[i];	/* uV  */
-
-		if (iTemp < 0)
-		{
-			iTemp = -iTemp;
-			printf(" (-%ld.%03ld %03ld V) \r\n", iTemp /1000000, (iTemp%1000000)/1000, iTemp%1000);
-		}
-		else
-		{
-			printf(" ( %ld.%03ld %03ld V) \r\n", iTemp /1000000, (iTemp%1000000)/1000, iTemp%1000);                    
-		}
-				
+		printf("%s : %x\n", regname[i] ,ADS1256_ReadReg(i));
 	}
-	printf("\33[%dA", (int)ch_num);  	
 }
 
 /*
@@ -817,6 +987,25 @@ void setCS_ADS1256(char b)
 		bcm2835_gpio_write(AD_SPI_CS,LOW);
 	}
 }
+
+
+/*
+*********************************************************************************************************
+*	name: ADS1256_Value2Volt
+*	function:  convert ADC output value to volt [V] 
+*	parameter: value :  output value ( 0 - 0x7fffff )
+						reference voltage [V] ( 3.3 or 5.0 )
+*	The return value:  ADC voltage [V]
+*********************************************************************************************************
+*/
+double ADS1256_Value2Volt(uint32_t value , double vref)
+{
+	return value * 1.0 / 0x7fffff * vref;
+}
+
+
+
+
 
 /*
 *********************************************************************************************************
@@ -929,3 +1118,5 @@ void closeHPADDAboard()
     bcm2835_spi_end();
     bcm2835_close();
 }
+
+
