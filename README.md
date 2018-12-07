@@ -14,6 +14,12 @@ I got permission from an administrator of the official for publication.
 
 # Usage
 
+```shell
+cd ./HPADDAlibrary
+make
+sudo ./Test
+```
+
 # Functions
 
 ## Use for both AD and DA
@@ -28,11 +34,12 @@ I got permission from an administrator of the official for publication.
 *	parameter: NULL
 *	The return value:  NULL
 
-## Use for DA
-### void setCS_DAC8532(char b)
-*	function:  set SPI CS pin value of DAC8532 
-*	parameter: b : bool value for SPI CS status (0 : connection start , 1: connection end)
+### void delay_us(uint64_t micros)
+*	function:  wait[us]
+*	parameter: [us]
 *	The return value:  NULL
+
+## Use for DA
 
 ### void writeDAC8532( int dac_channel , unsigned int val)
 *	function:  change an output of DAC8532 to target value 
@@ -45,5 +52,10 @@ I got permission from an administrator of the official for publication.
 *	parameter:  volt : target volt [v] ( 0 - 5.0 )
 				volt_ref : reference volt [v] ( 3.3 or 5.0 )
 *	The return value:  output value to DAC8532 ( 0 - 65535 )
+
+### <font color = lightgray>void setCS_DAC8532(char b)</font>
+*	<font color = lightgray>function:  set SPI CS pin value of DAC8532</font> 
+*	<font color = lightgray>parameter: b : bool value for SPI CS status (0 : connection start , 1: connection end)</font>
+*	<font color = lightgray>The return value:  NULL</font>
 
 ## Use for AD
