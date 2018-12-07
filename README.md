@@ -36,21 +36,23 @@ sudo ./Test
 
 ### void delay_us(uint64_t micros)
 *	function:  wait[us]
-*	parameter: [us]
+*	parameter:
+	* [us]
 *	The return value:  NULL
 
 ## Use for DA
 
 ### void writeDAC8532( int dac_channel , unsigned int val)
 *	function:  change an output of DAC8532 to target value 
-*	parameter:  dac_channel : channel of DAC8532 (0 or 1)
-*	            val : output value to DAC8532 ( 0 - 65536 ) , please use volt2DAC8532val function
+*	parameter:
+	  * dac_channel : channel of DAC8532 (0 or 1)
+	  * val : output value to DAC8532 ( 0 - 65536 ) , please use volt2DAC8532val function
 *	The return value:  NULL
 
 ### unsigned int volt2DAC8532val( double volt , double volt_ref)
 *	function:   convert value from volt to 16bit value ( 0 - 65535 )
 *	parameter:  volt : target volt [v] ( 0 - 5.0 )
-*	            volt_ref : reference volt [v] ( 3.3 or 5.0 )
+	  * volt_ref : reference volt [v] ( 3.3 or 5.0 )
 *	The return value:  output value to DAC8532 ( 0 - 65535 )
 
 ## Use for DA (Private Function)
@@ -67,7 +69,7 @@ sudo ./Test
 ### int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
 *	function: read ADC value
 *	parameter:  positive_no : input port no of positive side (0 - 7)
-*	            negative_no : input port no of negative side (0 - 7)
+	  * negative_no : input port no of negative side (0 - 7)
 *	The return value:  ADC vaule (signed number)
 
 ## Use for AD (Print)
@@ -91,32 +93,36 @@ sudo ./Test
 ### double ADS1256_Value2Volt(uint32_t value , double vref);
 *	function:  convert ADC output value to volt [V] 
 *	parameter: value :  output value ( 0 - 0x7fffff )
-*	                    reference voltage [V] ( 3.3 or 5.0 )
+	  * reference voltage [V] ( 3.3 or 5.0 )
 *	The return value:  ADC voltage [V]
 
 ## Use for AD (Settings)
 
 ### void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
 *	function: The configuration parameters of ADC, gain and data rate
-*	parameter: _gain:gain 1-64
-*                      _drate:  data  rate
+*	parameter: 
+	  * _gain:gain 1-64
+	  * _drate:  data  rate
 *	The return value: NULL
 
 ### uint8_t ADS1256_ReadChipID(void);
 ### static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue);
 *	function: Write the corresponding register
-*	parameter: _RegID: register  ID
-*	           _RegValue: register Value
+*	parameter: 
+	  * _RegID: register  ID
+	  * _RegValue: register Value
 *	The return value: NULL
 
 ### static uint8_t ADS1256_ReadReg(uint8_t _RegID);
 *	function: Read  the corresponding register
-*	parameter: _RegID: register  ID
+*	parameter: 
+	  * _RegID: register  ID
 *	The return value: read register value
 
 ### static void ADS1256_WriteCmd(uint8_t _cmd);
 *	function: Sending a single byte order
-*	parameter: _cmd : command
+*	parameter:
+	  * _cmd : command
 *	The return value: NULL
 
 ## Use for AD (Private Functions)
@@ -138,22 +144,23 @@ sudo ./Test
 
 ### void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
 *	function:  set ADS1256 MUX for changing input of ADC 
-*	parameter: positive_no :input port no of positive side (0 - 7 or -1)
-	                        Nomally it should be set to 0 - 7
-	                        When set to -1 , AGND becomes positive input
-	           negative_no :input port no of negative side (-1 or 0 - 7)
-	                        Nomally it should be set to -1
-	                        When use Differential Input, it should be set to 0 - 7
+*	parameter: 
+	  * positive_no :input port no of positive side (0 - 7 or -1)
+		    * Nomally it should be set to 0 - 7. When set to -1 , AGND becomes positive input.
+	  * negative_no :input port no of negative side (-1 or 0 - 7)
+		    * Nomally it should be set to -1. When use Differential Input, it should be set to 0 - 7.
 *	The return value: NULL
 
 ### void ADS1256_SetCS(char b);
 *	function:  set SPI CS pin value of ADS1256 
-*	parameter: b : bool value for SPI CS status (0 : connection start , 1: connection end)
+*	parameter:
+	* b : bool value for SPI CS status (0 : connection start , 1: connection end)
 *	The return value:  NULL
 
 ### static void ADS1256_Send8Bit(uint8_t _data);
 *	function: SPI bus to send 8 bit data
-*	parameter: _data:  data
+*	parameter:
+	* _data:  data
 *	The return value: NULL
 
 ### static uint8_t ADS1256_Recive8Bit(void);
