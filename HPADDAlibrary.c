@@ -181,10 +181,6 @@ void ADS1256_PrintAllValueDiff();
 void ADS1256_PrintAllReg();
 double ADS1256_Value2Volt(uint32_t value , double vref);
 
-// Connection to AD
-static int32_t ADS1256_ReadData(void);
-
-
 // AD settings
 void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
 uint8_t ADS1256_ReadChipID(void);
@@ -193,6 +189,7 @@ static uint8_t ADS1256_ReadReg(uint8_t _RegID);
 static void ADS1256_WriteCmd(uint8_t _cmd);
 
 // AD others (Private)
+static int32_t ADS1256_ReadData(void);
 static void ADS1256_DelayDATA(void);
 void ADS1256_WaitDRDY(void);
 void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
@@ -277,7 +274,7 @@ void closeHPADDAboard()
 *	name: DAC8532_Write
 *	function:  change an output of DAC8532 to target value 
 *	parameter:  dac_channel : channel of DAC8532 (0 or 1)
-				val : output value to DAC8532 ( 0 - 65536 ) , please use DAC8532_Volt2Value function
+*	                    val : output value to DAC8532 ( 0 - 65536 ) , please use DAC8532_Volt2Value function
 *	The return value:  NULL
 *********************************************************************************************************
 */
@@ -304,7 +301,7 @@ void DAC8532_Write( int dac_channel , unsigned int val)
 *	name: DAC8532_Volt2Value
 *	function:  convert value from volt to 16bit value ( 0 - 65535 )
 *	parameter:  volt : target volt [v] ( 0 - 5.0 )
-				volt_ref : reference volt [v] ( 3.3 or 5.0 )
+*	        volt_ref : reference volt [v] ( 3.3 or 5.0 )
 *	The return value:  output value to DAC8532 ( 0 - 65535 )
 *********************************************************************************************************
 */
@@ -359,10 +356,10 @@ int32_t ADS1256_GetAdc(uint8_t ch)
 
 /*
 *********************************************************************************************************
-*	name: ADS1256_GetAdc
+*	name: ADS1256_GetAdcDiff
 *	function: read ADC value
 *	parameter:  positive_no : input port no of positive side (0 - 7)
-				negative_no : input port no of negative side (0 - 7)
+*	            negative_no : input port no of negative side (0 - 7)
 *	The return value:  ADC vaule (signed number)
 *********************************************************************************************************
 */
@@ -437,7 +434,7 @@ void ADS1256_PrintAllReg()
 *	name: ADS1256_Value2Volt
 *	function:  convert ADC output value to volt [V] 
 *	parameter: value :  output value ( 0 - 0x7fffff )
-						reference voltage [V] ( 3.3 or 5.0 )
+*	                    reference voltage [V] ( 3.3 or 5.0 )
 *	The return value:  ADC voltage [V]
 *********************************************************************************************************
 */
@@ -588,7 +585,7 @@ void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate)
 *	name: ADS1256_WriteReg
 *	function: Write the corresponding register
 *	parameter: _RegID: register  ID
-*			 _RegValue: register Value
+*	           _RegValue: register Value
 *	The return value: NULL
 *********************************************************************************************************
 */
@@ -717,13 +714,13 @@ void ADS1256_WaitDRDY(void)
 *********************************************************************************************************
 *	name: ADS1256_ChangeMUX
 *	function:  set ADS1256 MUX for changing input of ADC 
-*	parameter: 	positive_no :input port no of positive side (0 - 7 or -1)
-							 Nomally it should be set to 0 - 7
-							 When set to -1 , AGND becomes positive input
-				negative_no :input port no of negative side (-1 or 0 - 7)
-							 Nomally it should be set to -1
-							 When use Differential Input, it should be set to 0 - 7
-*	The return value:  NULL
+*	parameter: positive_no :input port no of positive side (0 - 7 or -1)
+	                        Nomally it should be set to 0 - 7
+	                        When set to -1 , AGND becomes positive input
+	           negative_no :input port no of negative side (-1 or 0 - 7)
+	                        Nomally it should be set to -1
+	                        When use Differential Input, it should be set to 0 - 7
+*	The return value: NULL
 *********************************************************************************************************
 */
 void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no )
