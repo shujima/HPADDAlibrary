@@ -111,7 +111,6 @@ enum
 };
 
 
-ADS1256_VAR_T g_tADS1256;
 static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 {
 	0xF0,		/*reset the default values  */
@@ -139,37 +138,32 @@ void closeHPADDAboard();
 
 // DA
 void DAC8532_Write( int dac_channel , unsigned int val);
-unsigned int DAC8532_Volt2Value( double volt , double volt_ref);
-
-void DAC8532_SetCS(char b); //(Private)
+unsigned int DAC8532_VoltToValue( double volt , double volt_ref);
 
 // Get AD
 int32_t ADS1256_GetAdc(uint8_t _ch);
 int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
+double ADS1256_ValueToVolt(int32_t value , double vref);
 
 // Print AD
 void ADS1256_PrintAllValue();
 void ADS1256_PrintAllValueDiff();
 void ADS1256_PrintAllReg();
-double ADS1256_Value2Volt(uint32_t value , double vref);
-
-// Connection to AD
-static int32_t ADS1256_ReadData(void);
-
 
 // AD settings
-void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
+double ADS1256_SetSampleRate(double rate);
+int ADS1256_SetGain(int gain);
 uint8_t ADS1256_ReadChipID(void);
 static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue);
 static uint8_t ADS1256_ReadReg(uint8_t _RegID);
 static void ADS1256_WriteCmd(uint8_t _cmd);
 
-// AD others (Private)
+// Privates
+void DAC8532_SetCS(char b);
+static int32_t ADS1256_ReadData(void);
 static void ADS1256_DelayDATA(void);
 void ADS1256_WaitDRDY(void);
 void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
 void ADS1256_SetCS(char b);
-
-// AD bottom layer of connection (Private)
 static void ADS1256_Send8Bit(uint8_t _data);
 static uint8_t ADS1256_Recive8Bit(void);

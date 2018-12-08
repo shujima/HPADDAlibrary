@@ -126,7 +126,6 @@ enum
 };
 
 
-ADS1256_VAR_T g_tADS1256;
 static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 {
 	0xF0,		/*reset the default values  */
@@ -167,35 +166,33 @@ void closeHPADDAboard();
 
 // DA
 void DAC8532_Write( int dac_channel , unsigned int val);
-unsigned int DAC8532_Volt2Value( double volt , double volt_ref);
-
-void DAC8532_SetCS(char b); //(Private)
+unsigned int DAC8532_VoltToValue( double volt , double volt_ref);
 
 // Get AD
 int32_t ADS1256_GetAdc(uint8_t _ch);
 int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
+double ADS1256_ValueToVolt(int32_t value , double vref);
 
 // Print AD
 void ADS1256_PrintAllValue();
 void ADS1256_PrintAllValueDiff();
 void ADS1256_PrintAllReg();
-double ADS1256_Value2Volt(uint32_t value , double vref);
 
 // AD settings
-void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
+double ADS1256_SetSampleRate(double rate);
+int ADS1256_SetGain(int gain);
 uint8_t ADS1256_ReadChipID(void);
 static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue);
 static uint8_t ADS1256_ReadReg(uint8_t _RegID);
 static void ADS1256_WriteCmd(uint8_t _cmd);
 
-// AD others (Private)
+// Privates
+void DAC8532_SetCS(char b);
 static int32_t ADS1256_ReadData(void);
 static void ADS1256_DelayDATA(void);
 void ADS1256_WaitDRDY(void);
 void ADS1256_ChangeMUX(int8_t positive_no , int8_t negative_no );
 void ADS1256_SetCS(char b);
-
-// AD bottom layer of connection (Private)
 static void ADS1256_Send8Bit(uint8_t _data);
 static uint8_t ADS1256_Recive8Bit(void);
 
@@ -237,10 +234,6 @@ int initHPADDAboard()
     bcm2835_gpio_write( DA_SPI_CS , HIGH);
     bcm2835_gpio_fsel( AD_DRDY , BCM2835_GPIO_FSEL_INPT );
     bcm2835_gpio_set_pud( AD_DRDY , BCM2835_GPIO_PUD_UP );
-
-    //ADS1256_WriteReg(REG_MUX,0x01);
-    //ADS1256_WriteReg(REG_ADCON,0x20);
-   	// ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_15SPS);	
 	
 	return 0;
 }
@@ -274,7 +267,7 @@ void closeHPADDAboard()
 *	name: DAC8532_Write
 *	function:  change an output of DAC8532 to target value 
 *	parameter:  dac_channel : channel of DAC8532 (0 or 1)
-*	                    val : output value to DAC8532 ( 0 - 65536 ) , please use DAC8532_Volt2Value function
+*	                    val : output value to DAC8532 ( 0 - 65536 ) , please use DAC8532_VoltToValue function
 *	The return value:  NULL
 *********************************************************************************************************
 */
@@ -298,37 +291,18 @@ void DAC8532_Write( int dac_channel , unsigned int val)
 
 /*
 *********************************************************************************************************
-*	name: DAC8532_Volt2Value
+*	name: DAC8532_VoltToValue
 *	function:  convert value from volt to 16bit value ( 0 - 65535 )
 *	parameter:  volt : target volt [v] ( 0 - 5.0 )
 *	        volt_ref : reference volt [v] ( 3.3 or 5.0 )
 *	The return value:  output value to DAC8532 ( 0 - 65535 )
 *********************************************************************************************************
 */
-unsigned int DAC8532_Volt2Value( double volt , double volt_ref)
+unsigned int DAC8532_VoltToValue( double volt , double volt_ref)
 {
     return ( unsigned int ) ( 65536 * volt / volt_ref );
 }
 
-/*
-*********************************************************************************************************
-*	name: DAC8532_SetCS
-*	function:  set SPI CS pin value of DAC8532 
-*	parameter: b : bool value for SPI CS status (0 : connection start , 1: connection end)
-*	The return value:  NULL
-*********************************************************************************************************
-*/
-void DAC8532_SetCS(char b)
-{
-	if(b)
-	{
-		bcm2835_gpio_write(DA_SPI_CS,HIGH);
-	}
-	else
-	{
-		bcm2835_gpio_write(DA_SPI_CS,LOW);
-	}
-}
 
 
 
@@ -372,6 +346,20 @@ int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no )
 
 /*
 *********************************************************************************************************
+*	name: ADS1256_ValueToVolt
+*	function:  convert ADC output value to volt [V] 
+*	parameter: value :  output value ( 0 - 0x7fffff )
+*	                    reference voltage [V] ( 3.3 or 5.0 )
+*	The return value:  ADC voltage [V]
+*********************************************************************************************************
+*/
+double ADS1256_ValueToVolt(int32_t value , double vref)
+{
+	return value * 1.0 / 0x7fffff * vref;
+}
+
+/*
+*********************************************************************************************************
 *	name: ADS1256_PrintAllValue
 *	function:  print 8 values of ADS1256 input
 *	parameter: NULL
@@ -385,7 +373,7 @@ void ADS1256_PrintAllValue()
 	for (i = 0 ; i < 8 ; i ++)
 	{
 		adval = ADS1256_GetAdc(i);
-		printf("%d : %d \t(%f[V])\n",i ,adval, ADS1256_Value2Volt(adval,  5.0 ) );
+		printf("%d : %8d \t(%f[V])\n",i ,adval, ADS1256_ValueToVolt(adval,  5.0 ) );
 		//ADS1256_PrintAllReg();
 	}
 }
@@ -405,8 +393,7 @@ void ADS1256_PrintAllValueDiff()
 	for (i = 0 ; i < 4 ; i ++)
 	{
 		adval = ADS1256_GetAdcDiff( 2 * i , 2 * i + 1 );
-		printf("%d-%d : %d \t(%f[V])\n",2 * i, 2 * i + 1 ,adval, ADS1256_Value2Volt(adval,  5.0 ) );
-		//ADS1256_PrintAllReg();
+		printf("%d-%d : %8d \t(%10f[V])\n",2 * i, 2 * i + 1 ,adval, ADS1256_ValueToVolt(adval,  5.0 ) );
 	}
 }
 
@@ -431,20 +418,6 @@ void ADS1256_PrintAllReg()
 
 /*
 *********************************************************************************************************
-*	name: ADS1256_Value2Volt
-*	function:  convert ADC output value to volt [V] 
-*	parameter: value :  output value ( 0 - 0x7fffff )
-*	                    reference voltage [V] ( 3.3 or 5.0 )
-*	The return value:  ADC voltage [V]
-*********************************************************************************************************
-*/
-double ADS1256_Value2Volt(uint32_t value , double vref)
-{
-	return value * 1.0 / 0x7fffff * vref;
-}
-
-/*
-*********************************************************************************************************
 *	name: ADS1256_ReadData
 *	function: read ADC value
 *	parameter: NULL
@@ -456,7 +429,7 @@ static int32_t ADS1256_ReadData(void)
 	uint32_t read = 0;
     static uint8_t buf[3];
 	DAC8532_SetCS(HIGH);
-	ADS1256_SetCS(LOW);	/* SPI   cs = 0 */
+	ADS1256_SetCS(LOW);	//SPI start
 
 	ADS1256_Send8Bit(CMD_RDATA);	/* read ADC command  */
 
@@ -471,7 +444,7 @@ static int32_t ADS1256_ReadData(void)
     read |= ((uint32_t)buf[1] << 8);  /* Pay attention to It is wrong   read |= (buf[1] << 8) */
     read |= buf[2];
 
-	ADS1256_SetCS(HIGH);	/* SPIƬѡ = 1 */
+	ADS1256_SetCS(HIGH);	//SPI end
 
 	/* Extend a signed number*/
     if (read & 0x800000)
@@ -484,100 +457,64 @@ static int32_t ADS1256_ReadData(void)
 
 /*
 *********************************************************************************************************
-*	name: ADS1256_CfgADC
-*	function: The configuration parameters of ADC, gain and data rate
-*	parameter: _gain:gain 1-64
-*                      _drate:  data  rate
-*	The return value: NULL
+*	name: ADS1256_SetSampleRate
+*	function: set sampling rate of ADS1256
+*	parameter: rate : [samples per second] (2.5 - 30000)
+*	 This rate is for one input. It becomes later in the case of multi input.
+*	The return value: Actual set value
 *********************************************************************************************************
 */
-void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate)
+double ADS1256_SetSampleRate(double rate)
 {
-	g_tADS1256.Gain = _gain;
-	g_tADS1256.DataRate = _drate;
+	ADS1256_DRATE_E set_rate_e = ADS1256_2d5SPS;
+	double set_rate_f = 2.5;
 
-	ADS1256_WaitDRDY();
+	if(rate <= 2.5){set_rate_e = ADS1256_2d5SPS; set_rate_f = 2.5;}
+	if(rate <= 5 ){set_rate_e = ADS1256_5SPS; set_rate_f = 5;}
+	else if(rate <= 10 ){set_rate_e = ADS1256_10SPS; set_rate_f = 10;}
+	else if(rate <= 15 ){set_rate_e = ADS1256_15SPS; set_rate_f = 15;}
+	else if(rate <= 25 ){set_rate_e = ADS1256_25SPS; set_rate_f = 25;}
+	else if(rate <= 30 ){set_rate_e = ADS1256_30SPS; set_rate_f = 30;}
+	else if(rate <= 50 ){set_rate_e = ADS1256_50SPS; set_rate_f = 50;}
+	else if(rate <= 60 ){set_rate_e = ADS1256_60SPS; set_rate_f = 60;}
+	else if(rate <= 100 ){set_rate_e = ADS1256_100SPS; set_rate_f = 100;}
+	else if(rate <= 500 ){set_rate_e = ADS1256_500SPS; set_rate_f = 500;}
+	else if(rate <= 1000 ){set_rate_e = ADS1256_1000SPS; set_rate_f = 1000;}
+	else if(rate <= 2000 ){set_rate_e = ADS1256_2000SPS; set_rate_f = 2000;}
+	else if(rate <= 3750 ){set_rate_e = ADS1256_3750SPS; set_rate_f = 3750;}
+	else if(rate <= 7500 ){set_rate_e = ADS1256_7500SPS; set_rate_f = 7500;}
+	else if(rate <= 15000 ){set_rate_e = ADS1256_15000SPS; set_rate_f = 15000;}
+	else if(rate > 15000 ){set_rate_e = ADS1256_30000SPS; set_rate_f = 30000;}
 
-	{
-		uint8_t buf[4];		/* Storage ads1256 register configuration parameters */
+	ADS1256_WriteReg( 3 , s_tabDataRate[set_rate_e] );
 
-		/*Status register define
-			Bits 7-4 ID3, ID2, ID1, ID0  Factory Programmed Identification Bits (Read Only)
+	return set_rate_f;
+}
 
-			Bit 3 ORDER: Data Output Bit Order
-				0 = Most Significant Bit First (default)
-				1 = Least Significant Bit First
-			Input data  is always shifted in most significant byte and bit first. Output data is always shifted out most significant
-			byte first. The ORDER bit only controls the bit order of the output data within the byte.
+/*
+*********************************************************************************************************
+*	name: ADS1256_SetGain
+*	function: set Gain of ADS1256
+*	parameter: rate : Gain (1 - 64)
+*	The return value: Actual set value
+*********************************************************************************************************
+*/
+int ADS1256_SetGain(int gain)
+{
+	ADS1256_GAIN_E set_gain_e = ADS1256_GAIN_1;
+	int set_gain_i = 1;
 
-			Bit 2 ACAL : Auto-Calibration
-				0 = Auto-Calibration Disabled (default)
-				1 = Auto-Calibration Enabled
-			When Auto-Calibration is enabled, self-calibration begins at the completion of the WREG command that changes
-			the PGA (bits 0-2 of ADCON register), DR (bits 7-0 in the DRATE register) or BUFEN (bit 1 in the STATUS register)
-			values.
+	if(gain <= 1){set_gain_e = ADS1256_GAIN_1; set_gain_i = 1;}
+	else if(gain <= 2){set_gain_e = ADS1256_GAIN_2; set_gain_i = 2;}
+	else if(gain <= 4){set_gain_e = ADS1256_GAIN_4; set_gain_i = 4;}
+	else if(gain <= 8){set_gain_e = ADS1256_GAIN_8; set_gain_i = 8;}
+	else if(gain <= 16){set_gain_e = ADS1256_GAIN_16; set_gain_i = 16;}
+	else if(gain <= 32){set_gain_e = ADS1256_GAIN_32; set_gain_i = 32;}
+	else if(gain > 32){set_gain_e = ADS1256_GAIN_64; set_gain_i = 64;}
 
-			Bit 1 BUFEN: Analog Input Buffer Enable
-				0 = Buffer Disabled (default)
-				1 = Buffer Enabled
+	ADS1256_WriteReg( 2 , ADS1256_ReadReg(2) & 0xf8 | set_gain_e & 0x07 );
 
-			Bit 0 DRDY :  Data Ready (Read Only)
-				This bit duplicates the state of the DRDY pin.
-
-			ACAL=1  enable  calibration
-		*/
-		//buf[0] = (0 << 3) | (1 << 2) | (1 << 1);//enable the internal buffer
-        buf[0] = (0 << 3) | (1 << 2) | (0 << 1);  // The internal buffer is prohibited
-
-        //ADS1256_WriteReg(REG_STATUS, (0 << 3) | (1 << 2) | (1 << 1));
-
-		buf[1] = 0x08;	
-
-		/*	ADCON: A/D Control Register (Address 02h)
-			Bit 7 Reserved, always 0 (Read Only)
-			Bits 6-5 CLK1, CLK0 : D0/CLKOUT Clock Out Rate Setting
-				00 = Clock Out OFF
-				01 = Clock Out Frequency = fCLKIN (default)
-				10 = Clock Out Frequency = fCLKIN/2
-				11 = Clock Out Frequency = fCLKIN/4
-				When not using CLKOUT, it is recommended that it be turned off. These bits can only be reset using the RESET pin.
-
-			Bits 4-3 SDCS1, SCDS0: Sensor Detect Current Sources
-				00 = Sensor Detect OFF (default)
-				01 = Sensor Detect Current = 0.5 �� A
-				10 = Sensor Detect Current = 2 �� A
-				11 = Sensor Detect Current = 10�� A
-				The Sensor Detect Current Sources can be activated to verify  the integrity of an external sensor supplying a signal to the
-				ADS1255/6. A shorted sensor produces a very small signal while an open-circuit sensor produces a very large signal.
-
-			Bits 2-0 PGA2, PGA1, PGA0: Programmable Gain Amplifier Setting
-				000 = 1 (default)
-				001 = 2
-				010 = 4
-				011 = 8
-				100 = 16
-				101 = 32
-				110 = 64
-				111 = 64
-		*/
-		buf[2] = (0 << 5) | (0 << 3) | (_gain << 0);
-		//ADS1256_WriteReg(REG_ADCON, (0 << 5) | (0 << 2) | (GAIN_1 << 1));	/*choose 1: gain 1 ;input 5V/
-		buf[3] = s_tabDataRate[_drate];	// DRATE_10SPS;	
-
-		DAC8532_SetCS(HIGH);
-		ADS1256_SetCS(LOW);	/* SPIƬѡ = 0 */
-		ADS1256_Send8Bit(CMD_WREG | 0);	/* Write command register, send the register address */
-		ADS1256_Send8Bit(0x03);			/* Register number 4,Initialize the number  -1*/
-
-		ADS1256_Send8Bit(buf[0]);	/* Set the status register */
-		ADS1256_Send8Bit(buf[1]);	/* Set the input channel parameters */
-		ADS1256_Send8Bit(buf[2]);	/* Set the ADCON control register,gain */
-		ADS1256_Send8Bit(buf[3]);	/* Set the output rate */
-
-		ADS1256_SetCS(HIGH);	/* SPI  cs = 1 */
-	}
-
-	delay_us(50);
+	return set_gain_i;
 }
 
 /*
@@ -666,6 +603,29 @@ uint8_t ADS1256_ReadChipID(void)
 //#####################################################################
 //  Private Functions
 
+
+
+
+
+/*
+*********************************************************************************************************
+*	name: DAC8532_SetCS
+*	function:  set SPI CS pin value of DAC8532 
+*	parameter: b : bool value for SPI CS status (0 : connection start , 1: connection end)
+*	The return value:  NULL
+*********************************************************************************************************
+*/
+void DAC8532_SetCS(char b)
+{
+	if(b)
+	{
+		bcm2835_gpio_write(DA_SPI_CS,HIGH);
+	}
+	else
+	{
+		bcm2835_gpio_write(DA_SPI_CS,LOW);
+	}
+}
 
 
 
@@ -809,6 +769,7 @@ static uint8_t ADS1256_Recive8Bit(void)
 	read = bcm2835_spi_transfer(0xff);
 	return read;
 }
+
 
 
 

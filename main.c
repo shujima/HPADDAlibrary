@@ -46,9 +46,10 @@ int  main()
         case '2':
         {
             initHPADDAboard();
-            ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_15SPS);
+            ADS1256_SetSampleRate(10);  //[samples / s / inputnum]
+            ADS1256_SetGain(1);
             printf("AD Combination both Single and Differential\n");
-            printf("AGND- <-.\n");
+            printf("AGND-<--.\n");
             printf("AD0+ <--|\n");
             printf("AD1+ <--|\n");
             printf("AD2+ <--|\n");
@@ -59,9 +60,12 @@ int  main()
             printf("AD7+ <--'\n");
             while(1)
             {
+                ADS1256_PrintAllReg();
+                printf("\n");                
                 ADS1256_PrintAllValue();
+
                 delay_us(100000);
-                printf("\033[%dA",8);   // Go back 8 lines
+                printf("\033[%dA",20);   // Go back 20 lines
             }
             closeHPADDAboard();
             break;
@@ -73,7 +77,8 @@ int  main()
         case '3':
         {
             initHPADDAboard();                       
-            ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_15SPS);
+            ADS1256_SetSampleRate(10);  //[samples / s / inputnum]
+            ADS1256_SetGain(1);
             printf("AD Differential Input\n");
             printf("AD0+ <--.\n");
             printf("AD1- <--'\n");
@@ -96,11 +101,12 @@ int  main()
         case '4':
         {
             initHPADDAboard();
-            ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_15SPS);
+            ADS1256_SetSampleRate(10);  //[samples / s / inputnum]
+            ADS1256_SetGain(1);
             printf("AD Combination both Single and Differential\n");
-            printf("AGND- <-.\n");
-            printf("AD0+ <--|\n");
-            printf("AD1+ <--'\n");
+            printf("AGND-<----.\n");
+            printf("AD0+ <--' |\n");
+            printf("AD1+ <----'\n");
             printf("AD2+ <--.\n");
             printf("AD3- <--'\n");
             printf("AD4+ <--.\n");
@@ -116,7 +122,7 @@ int  main()
                 {
                     val = ADS1256_GetAdc(i);
                 printf("%d+ <=> -AGND (Single)  : %8d\t (%f[V])\n", i , val,
-                     ADS1256_Value2Volt(val, 5.0) );
+                     ADS1256_ValueToVolt(val, 5.0) );
                 }
 
                 // Differential
@@ -124,7 +130,7 @@ int  main()
                 {
                     val = ADS1256_GetAdcDiff(i, i + 1);
                 printf("%d+ <=> -%d (Differntial): %8d\t (%f[V])\n", i, i + 1 ,
-                     val, ADS1256_Value2Volt(val, 5.0) );
+                     val, ADS1256_ValueToVolt(val, 5.0) );
                 }
                 delay_us(100000);
                 printf("\033[%dA",5);   // Go back 5 lines
@@ -139,8 +145,8 @@ int  main()
 
             while(1)
             {
-                DAC8532_Write( 0 , DAC8532_Volt2Value( fabs( 5.0 * sin( i / 10.0 ) ) , 5.0 ) );
-                DAC8532_Write( 1 , DAC8532_Volt2Value( fabs( 5.0 * cos( i / 10.0 ) ) , 5.0 ) );
+                DAC8532_Write( 0 , DAC8532_VoltToValue( fabs( 5.0 * sin( i / 10.0 ) ) , 5.0 ) );
+                DAC8532_Write( 1 , DAC8532_VoltToValue( fabs( 5.0 * cos( i / 10.0 ) ) , 5.0 ) );
                 printf("DAC0 = %f [V], DAC1 = %f [V]\n" ,  5.0 * fabs( sin( i / 10.0 ) ) , 5.0 * fabs( cos( i / 10.0 ) ));
                 i++;
                 delay_us(100000);
@@ -151,7 +157,8 @@ int  main()
         case '6':
         {
             initHPADDAboard();
-            ADS1256_CfgADC(ADS1256_GAIN_1, ADS1256_15SPS);
+            ADS1256_SetSampleRate(1000);  //[samples / s / inputnum]
+            ADS1256_SetGain(1);
             printf("AD to DA\n");
             printf("AD0 ---> DA0\n");
             printf("AD1 ---> DA1\n");
@@ -165,8 +172,8 @@ int  main()
                 {
                     val = ADS1256_GetAdc(i);
                     printf("%d+ <=> -AGND (Single)  : %8d\t (%f[V])\n", i , val,
-                        ADS1256_Value2Volt(val, 5.0) );
-                    DAC8532_Write( i , DAC8532_Volt2Value( ADS1256_Value2Volt(val, 5.0) , 5.0 ) );
+                        ADS1256_ValueToVolt(val, 5.0) );
+                    DAC8532_Write( i , DAC8532_VoltToValue( ADS1256_ValueToVolt(val, 5.0) , 5.0 ) );
                 }
                 delay_us(100000);
                 printf("\033[%dA",2);   // Go back 2 lines
