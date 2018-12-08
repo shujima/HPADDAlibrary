@@ -228,9 +228,9 @@ int initHPADDAboard()
     int initstate = bcm2835_init();
     if (initstate < 0) { perror("Couldn't start bcm2835 lib."); return -1;}
     bcm2835_spi_begin();
-    bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_LSBFIRST );
+    bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST );
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE1);
-    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_1024); 
+    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_256); 
     bcm2835_gpio_fsel( AD_SPI_CS , BCM2835_GPIO_FSEL_OUTP);
     bcm2835_gpio_write( AD_SPI_CS , HIGH);
     bcm2835_gpio_fsel( DA_SPI_CS , BCM2835_GPIO_FSEL_OUTP);
