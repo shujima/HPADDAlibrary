@@ -42,14 +42,14 @@ sudo ./Test
 
 ## Use for DA
 
-### void writeDAC8532( int dac_channel , unsigned int val)
+### void DAC8532_Write( int dac_channel , unsigned int val)
 *	function:  change an output of DAC8532 to target value 
 *	parameter:
-	  * dac_channel : channel of DAC8532 (0 or 1)
-	  * val : output value to DAC8532 ( 0 - 65536 ) , please use volt2DAC8532val function
+	* dac_channel : channel of DAC8532 (0 or 1)
+	* val : output value to DAC8532 ( 0 - 65536 ) , please use DAC8532_VoltToValue function
 *	The return value:  NULL
 
-### unsigned int voltToDAC8532val( double volt , double volt_ref)
+### unsigned int DAC8532_VoltToValue( double volt , double volt_ref)
 *	function:   convert value from volt to 16bit value ( 0 - 65535 )
 *	parameter:  volt : target volt [v] ( 0 - 5.0 )
 	  * volt_ref : reference volt [v] ( 3.3 or 5.0 )
@@ -59,19 +59,22 @@ sudo ./Test
 
 ### int32_t ADS1256_GetAdc(uint8_t _ch);
 *	function: read ADC value
-*	parameter:  channel number 0--7
+*	parameter:
+	* channel number 0--7
 *	The return value:  ADC vaule (signed number)
 
 ### int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
 *	function: read ADC value
-*	parameter:  positive_no : input port no of positive side (0 - 7)
-	  * negative_no : input port no of negative side (0 - 7)
+*	parameter: 
+	* positive_no : input port no of positive side (0 - 7)
+	* negative_no : input port no of negative side (0 - 7)
 *	The return value:  ADC vaule (signed number)
 
 ### double ADS1256_ValueToVolt(uint32_t value , double vref);
 *	function:  convert ADC output value to volt [V] 
-*	parameter: value :  output value ( 0 - 0x7fffff )
-	  * reference voltage [V] ( 3.3 or 5.0 )
+*	parameter:
+	* value :  output value ( 0 - 0x7fffff )
+	* reference voltage [V] ( 3.3 or 5.0 )
 *	The return value:  ADC voltage [V]
 
 ## Use for AD (Print)
