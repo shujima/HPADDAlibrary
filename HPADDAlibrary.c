@@ -7,10 +7,6 @@
 
 #include <bcm2835.h>  
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <math.h>
-#include <errno.h>
 #include "HPADDAlibrary.h"
 
 // Globals
@@ -31,7 +27,6 @@ void  delay_us(uint64_t micros)
 {
         bcm2835_delayMicroseconds (micros);
 }
-
 
 /*
 *********************************************************************************************************
