@@ -46,9 +46,9 @@ int  main()
         case '2':
         {
             initHPADDAboard();
-            ADS1256_SetSampleRate(10);  //[samples / s / inputnum]
-            ADS1256_SetGain(1);
-            printf("AD Combination both Single and Differential\n");
+            ADS1256_SetSampleRate(50);  //[samples / s / inputnum]
+            ADS1256_PrintAllReg();
+            printf("AD Single\n");
             printf("AGND-<--.\n");
             printf("AD0+ <--|\n");
             printf("AD1+ <--|\n");
@@ -59,13 +59,10 @@ int  main()
             printf("AD6+ <--|\n");
             printf("AD7+ <--'\n");
             while(1)
-            {
-                ADS1256_PrintAllReg();
-                printf("\n");                
+            {                
                 ADS1256_PrintAllValue();
-
                 delay_us(100000);
-                printf("\033[%dA",20);   // Go back 20 lines
+                printf("\033[%dA",8);   // Go back 8 lines
             }
             closeHPADDAboard();
             break;
@@ -79,6 +76,7 @@ int  main()
             initHPADDAboard();                       
             ADS1256_SetSampleRate(10);  //[samples / s / inputnum]
             ADS1256_SetGain(1);
+            ADS1256_PrintAllReg();
             printf("AD Differential Input\n");
             printf("AD0+ <--.\n");
             printf("AD1- <--'\n");
@@ -102,7 +100,7 @@ int  main()
         {
             initHPADDAboard();
             ADS1256_SetSampleRate(10);  //[samples / s / inputnum]
-            ADS1256_SetGain(1);
+            ADS1256_PrintAllReg();
             printf("AD Combination both Single and Differential\n");
             printf("AGND-<----.\n");
             printf("AD0+ <--' |\n");
