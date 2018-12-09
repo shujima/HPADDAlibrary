@@ -7,25 +7,6 @@
 # include <stdint.h> //uint8_t, ...
 // Enums
 
-typedef enum {FALSE = 0, TRUE = !FALSE} bool;
-
-/* gain channel */
-typedef enum
-{
-    ADS1256_GAIN_1 = 0, ADS1256_GAIN_2, ADS1256_GAIN_4, ADS1256_GAIN_8, 
-        ADS1256_GAIN_16, ADS1256_GAIN_32, ADS1256_GAIN_64
-}ADS1256_GAIN_E;
-
-typedef enum
-{
-    ADS1256_30000SPS = 0, ADS1256_15000SPS, ADS1256_7500SPS, ADS1256_3750SPS,
-    ADS1256_2000SPS, ADS1256_1000SPS, ADS1256_500SPS, ADS1256_100SPS, ADS1256_60SPS,
-    ADS1256_50SPS, ADS1256_30SPS, ADS1256_25SPS, ADS1256_15SPS, ADS1256_10SPS, ADS1256_5SPS,
-    ADS1256_2d5SPS, ADS1256_DRATE_MAX
-}ADS1256_DRATE_E;
-
-#define ADS1256_DRAE_COUNT = 15;
-
 // Register definition Table 23. Register Map --- ADS1256 datasheet Page 30
 enum
 {   REG_STATUS = 0, REG_MUX , REG_ADCON , REG_DRATE , REG_IO ,
@@ -33,7 +14,7 @@ enum
 
 };
 
-/* Command definition TTable 24. Command Definitions --- ADS1256 datasheet Page 34 */
+// Command definition TTable 24. Command Definitions --- ADS1256 datasheet Page 34
 enum
 {
     CMD_WAKEUP  = 0x00,    // Completes SYNC and Exits Standby Mode 0000  0000 (00h)
@@ -52,6 +33,21 @@ enum
     CMD_RESET   = 0xFE, // Reset to Power-Up Values 1111   1110 (FEh)
 };
 
+// ADS1256 Input Gain
+typedef enum
+{
+    ADS1256_GAIN_1 = 0, ADS1256_GAIN_2, ADS1256_GAIN_4, ADS1256_GAIN_8, 
+        ADS1256_GAIN_16, ADS1256_GAIN_32, ADS1256_GAIN_64
+}ADS1256_GAIN_E;
+
+// ADS1256 Sampling Rate
+typedef enum
+{
+    ADS1256_30000SPS = 0, ADS1256_15000SPS, ADS1256_7500SPS, ADS1256_3750SPS,
+    ADS1256_2000SPS, ADS1256_1000SPS, ADS1256_500SPS, ADS1256_100SPS, ADS1256_60SPS,
+    ADS1256_50SPS, ADS1256_30SPS, ADS1256_25SPS, ADS1256_15SPS, ADS1256_10SPS, ADS1256_5SPS,
+    ADS1256_2d5SPS, ADS1256_DRATE_MAX
+}ADS1256_DRATE_E;
 
 static const uint8_t s_tabDataRate[ADS1256_DRATE_MAX] =
 {
