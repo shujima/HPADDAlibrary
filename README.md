@@ -42,35 +42,40 @@ sudo ./Test
 
 ## Use for DA
 
-### void writeDAC8532( int dac_channel , unsigned int val)
+### void DAC8532_Write( int dac_channel , unsigned int val)
 *	function:  change an output of DAC8532 to target value 
 *	parameter:
-	  * dac_channel : channel of DAC8532 (0 or 1)
-	  * val : output value to DAC8532 ( 0 - 65536 ) , please use volt2DAC8532val function
+	* dac_channel : channel of DAC8532 (0 or 1)
+	* val : output value to DAC8532 ( 0 - 65536 ) , please use DAC8532_VoltToValue function
 *	The return value:  NULL
 
-### unsigned int volt2DAC8532val( double volt , double volt_ref)
+### unsigned int DAC8532_VoltToValue( double volt , double volt_ref)
 *	function:   convert value from volt to 16bit value ( 0 - 65535 )
 *	parameter:  volt : target volt [v] ( 0 - 5.0 )
 	  * volt_ref : reference volt [v] ( 3.3 or 5.0 )
 *	The return value:  output value to DAC8532 ( 0 - 65535 )
 
-## Use for DA (Private Function)
-
-### void setCS_DAC8532(char b)
-
 ## Use for AD
 
 ### int32_t ADS1256_GetAdc(uint8_t _ch);
 *	function: read ADC value
-*	parameter:  channel number 0--7
+*	parameter:
+	* channel number 0--7
 *	The return value:  ADC vaule (signed number)
 
 ### int32_t ADS1256_GetAdcDiff(uint8_t positive_no , uint8_t negative_no );
 *	function: read ADC value
-*	parameter:  positive_no : input port no of positive side (0 - 7)
-	  * negative_no : input port no of negative side (0 - 7)
+*	parameter: 
+	* positive_no : input port no of positive side (0 - 7)
+	* negative_no : input port no of negative side (0 - 7)
 *	The return value:  ADC vaule (signed number)
+
+### double ADS1256_ValueToVolt(uint32_t value , double vref);
+*	function:  convert ADC output value to volt [V] 
+*	parameter:
+	* value :  output value ( 0 - 0x7fffff )
+	* reference voltage [V] ( 3.3 or 5.0 )
+*	The return value:  ADC voltage [V]
 
 ## Use for AD (Print)
 
@@ -90,22 +95,27 @@ sudo ./Test
 *	parameter: NULL
 *	The return value:  NULL
 
-### double ADS1256_Value2Volt(uint32_t value , double vref);
-*	function:  convert ADC output value to volt [V] 
-*	parameter: value :  output value ( 0 - 0x7fffff )
-	  * reference voltage [V] ( 3.3 or 5.0 )
-*	The return value:  ADC voltage [V]
-
 ## Use for AD (Settings)
 
-### void ADS1256_CfgADC(ADS1256_GAIN_E _gain, ADS1256_DRATE_E _drate);
-*	function: The configuration parameters of ADC, gain and data rate
+### double ADS1256_SetSampleRate(double rate)
+*	function: set sampling rate of ADS1256
 *	parameter: 
-	  * _gain:gain 1-64
-	  * _drate:  data  rate
-*	The return value: NULL
+	* rate : [samples per second] (2.5 - 30000)
+		* This rate is for one input. It becomes later in the case of multi input.
+*	The return value: Actual set value
+
+### int ADS1256_SetGain(int gain)
+*	function: set Gain of ADS1256
+*	parameter: 
+	* rate : Gain (1 - 64)
+*	The return value: Actual set value
 
 ### uint8_t ADS1256_ReadChipID(void);
+*	function: Read the chip ID
+*	parameter: 
+	* _cmd : NULL
+*	The return value: four high status register
+
 ### static void ADS1256_WriteReg(uint8_t _RegID, uint8_t _RegValue);
 *	function: Write the corresponding register
 *	parameter: 
@@ -126,6 +136,12 @@ sudo ./Test
 *	The return value: NULL
 
 ## Use for AD (Private Functions)
+
+### void setCS_DAC8532(char b)
+*	function:  set SPI CS pin value of DAC8532 
+*	parameter: 
+	* b : bool value for SPI CS status (0 : connection start , 1: connection end)
+*	The return value:  NULL
 
 ### static int32_t ADS1256_ReadData(void);
 *	function: read ADC value
