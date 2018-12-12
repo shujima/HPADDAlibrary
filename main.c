@@ -143,11 +143,11 @@ int  main()
 
             while(1)
             {
-                DAC8532_Write( 0 , DAC8532_VoltToValue( fabs( 5.0 * sin( i / 10.0 ) ) , 5.0 ) );
-                DAC8532_Write( 1 , DAC8532_VoltToValue( fabs( 5.0 * cos( i / 10.0 ) ) , 5.0 ) );
-                printf("DAC0 = %f [V], DAC1 = %f [V]\n" ,  5.0 * fabs( sin( i / 10.0 ) ) , 5.0 * fabs( cos( i / 10.0 ) ));
+                DAC8532_Write( 0 , DAC8532_VoltToValue( fabs( 5.0 * sin( i / 300.0 ) ) , 5.0 ) );
+                DAC8532_Write( 1 , DAC8532_VoltToValue( fabs( 5.0 * cos( i / 300.0 ) ) , 5.0 ) );
+                printf("DAC0 = %f [V], DAC1 = %f [V]\n" ,  5.0 * fabs( sin( i / 300.0 ) ) , 5.0 * fabs( cos( i / 10.0 ) ));
                 i++;
-                delay_us(100000);
+                delay_us(1000);
             } 
             break;         
         }
@@ -173,7 +173,7 @@ int  main()
                         ADS1256_ValueToVolt(val, 5.0) );
                     DAC8532_Write( i , DAC8532_VoltToValue( ADS1256_ValueToVolt(val, 5.0) , 5.0 ) );
                 }
-                delay_us(100000);
+                delay_us(10000);
                 printf("\033[%dA",2);   // Go back 2 lines
             } 
             break;         

@@ -44,8 +44,8 @@ int initHPADDAboard()
     //SPI settings
     bcm2835_spi_begin();
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST );
-    bcm2835_spi_setDataMode(BCM2835_SPI_MODE1);
-    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_256); 
+    bcm2835_spi_setDataMode(BCM2835_SPI_MODE1); 
+    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);  //6.250Mhz on Raspberry Pi 3 
     //AD pins settings
     bcm2835_gpio_fsel( AD_SPI_CS , BCM2835_GPIO_FSEL_OUTP);
     bcm2835_gpio_write( AD_SPI_CS , HIGH);
@@ -108,11 +108,13 @@ void DAC8532_Write( int dac_channel , unsigned int val)
     DAC8532_SetCS(LOW);    //SPI start
     if(dac_channel == 0)
     {
-        bcm2835_spi_transfer(0x30);
+        // bcm2835_spi_transfer(0x30);
+        bcm2835_spi_transfer(0x10);
     }
     else if(dac_channel == 1)
     {
-        bcm2835_spi_transfer(0x34);
+        // bcm2835_spi_transfer(0x34);
+        bcm2835_spi_transfer(0x24);
     }
 
     bcm2835_spi_transfer( (val & 0xff00) >> 8 );  //Send upper 8 bits
